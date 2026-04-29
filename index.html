@@ -1,0 +1,2306 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIMRPG: RPG Simulator | OODP Final Project</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet" />
+
+  <!-- Highlight.js (syntax highlighting) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-style" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+
+  <!-- Mermaid.js -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <style>
+    /* ============================================================
+       CSS VARIABLES / THEME
+    ============================================================ */
+    :root {
+      --font-pixel : 'Press Start 2P', monospace;
+      --font-mono  : 'Share Tech Mono', monospace;
+      --font-vt    : 'VT323', monospace;
+      --ease       : 0.3s ease;
+      --r          : 4px;
+      --rl         : 8px;
+    }
+
+    [data-theme="dark"] {
+      --bg          : #07070d;
+      --bg2         : #0d0d1c;
+      --bg3         : #121224;
+      --txt         : #e8d5a3;
+      --txt-dim     : #7a6a4a;
+      --accent      : #ffd700;
+      --accent2     : #ff8c00;
+      --mana        : #4fc3f7;
+      --hp          : #ef5350;
+      --hp-low      : #ff1744;
+      --enemy       : #ce93d8;
+      --heal        : #66bb6a;
+      --glass       : rgba(18,18,36,.65);
+      --gbord       : rgba(255,215,0,.13);
+      --gshadow     : 0 8px 32px rgba(0,0,0,.7);
+      --code-bg     : #0d1117;
+      --code-bord   : #30363d;
+      --log-bg      : rgba(0,0,0,.55);
+      --scan        : rgba(0,0,0,.45);
+      --card-bg     : rgba(14,14,28,.8);
+    }
+
+    [data-theme="light"] {
+      --bg          : #f5e6c8;
+      --bg2         : #ede0c0;
+      --bg3         : #e0d0a8;
+      --txt         : #2c1810;
+      --txt-dim     : #6b4f35;
+      --accent      : #8b2000;
+      --accent2     : #c44000;
+      --mana        : #0047ab;
+      --hp          : #8b0000;
+      --hp-low      : #cc0000;
+      --enemy       : #6a0572;
+      --heal        : #2e7d32;
+      --glass       : rgba(245,230,200,.72);
+      --gbord       : rgba(139,32,0,.18);
+      --gshadow     : 0 8px 32px rgba(0,0,0,.15);
+      --code-bg     : #1a1a2e;
+      --code-bord   : #2d2d4e;
+      --log-bg      : rgba(255,255,255,.45);
+      --scan        : rgba(0,0,0,.015);
+      --card-bg     : rgba(240,230,210,.85);
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family : var(--font-mono);
+      background  : var(--bg);
+      color       : var(--txt);
+      line-height : 1.6;
+      overflow-x  : hidden;
+      transition  : background var(--ease), color var(--ease);
+    }
+
+    ::-webkit-scrollbar            { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track      { background: var(--bg2); }
+    ::-webkit-scrollbar-thumb      { background: var(--accent); border-radius: 3px; }
+
+    /* ============================================================
+       NAV
+    ============================================================ */
+    #nav {
+      position        : fixed;
+      inset           : 0 0 auto 0;
+      z-index         : 900;
+      display         : flex;
+      justify-content : space-between;
+      align-items     : center;
+      padding         : 10px 28px;
+      background      : var(--glass);
+      backdrop-filter : blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom   : 1px solid var(--gbord);
+    }
+
+    .nav-logo {
+      font-family : var(--font-pixel);
+      font-size   : 8px;
+      color       : var(--accent);
+      text-shadow : 0 0 12px var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .nav-links { display: flex; gap: 18px; align-items: center; }
+
+    .nav-links a {
+      font-family     : var(--font-pixel);
+      font-size       : 6px;
+      color           : var(--txt-dim);
+      text-decoration : none;
+      letter-spacing  : 1px;
+      transition      : color var(--ease);
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    #theme-btn {
+      font-family   : var(--font-pixel);
+      font-size     : 6px;
+      padding       : 5px 12px;
+      border        : 1px solid var(--gbord);
+      background    : var(--glass);
+      color         : var(--txt);
+      cursor        : pointer;
+      border-radius : var(--r);
+      transition    : all var(--ease);
+      letter-spacing: 1px;
+    }
+    #theme-btn:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+    /* ============================================================
+       SECTION COMMON
+    ============================================================ */
+    section { padding: 90px 36px 70px; }
+
+    .sec-head { text-align: center; margin-bottom: 54px; }
+
+    .sec-tag {
+      font-family    : var(--font-pixel);
+      font-size      : 6px;
+      color          : var(--accent);
+      letter-spacing : 5px;
+      display        : block;
+      margin-bottom  : 14px;
+      opacity        : .75;
+    }
+
+    .sec-title {
+      font-family : var(--font-pixel);
+      font-size   : clamp(12px, 2.2vw, 22px);
+      color       : var(--txt);
+      line-height : 1.7;
+    }
+
+    .sec-rule {
+      width      : 70px;
+      height     : 2px;
+      background : linear-gradient(90deg, transparent, var(--accent), transparent);
+      margin     : 16px auto 0;
+    }
+
+    /* ============================================================
+       SECTION 1 — HERO
+    ============================================================ */
+    #hero {
+      min-height       : 100vh;
+      display          : flex;
+      flex-direction   : column;
+      justify-content  : center;
+      align-items      : center;
+      text-align       : center;
+      position         : relative;
+      overflow         : hidden;
+      padding          : 110px 28px 60px;
+    }
+
+    #particles-canvas {
+      position        : absolute;
+      inset           : 0;
+      pointer-events  : none;
+      z-index         : 0;
+    }
+
+    .scanlines {
+      position        : absolute;
+      inset           : 0;
+      background      : repeating-linear-gradient(0deg, var(--scan) 0, var(--scan) 1px, transparent 1px, transparent 3px);
+      pointer-events  : none;
+      z-index         : 1;
+    }
+
+    /* floating runes bg */
+    .rune {
+      position        : absolute;
+      font-family     : var(--font-pixel);
+      font-size       : 10px;
+      color           : var(--accent);
+      opacity         : .08;
+      pointer-events  : none;
+      animation       : float-rune var(--dur, 6s) var(--dly, 0s) ease-in-out infinite;
+      z-index         : 1;
+    }
+
+    @keyframes float-rune {
+      0%,100% { transform: translateY(0) rotate(0deg); opacity: .08; }
+      50%     { transform: translateY(-28px) rotate(15deg); opacity: .18; }
+    }
+
+    .hero-inner { position: relative; z-index: 2; max-width: 860px; }
+
+    .hero-badge {
+      display       : inline-block;
+      font-family   : var(--font-pixel);
+      font-size     : 6px;
+      color         : var(--accent);
+      border        : 1px solid var(--accent);
+      padding       : 6px 16px;
+      margin-bottom : 28px;
+      letter-spacing: 4px;
+      animation     : badge-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes badge-glow {
+      0%,100% { box-shadow: 0 0 6px var(--accent); }
+      50%     { box-shadow: 0 0 22px var(--accent), 0 0 44px rgba(255,215,0,.3); }
+    }
+
+    .hero-title {
+      font-family    : var(--font-pixel);
+      font-size      : clamp(18px, 4.5vw, 48px);
+      color          : var(--accent);
+      text-shadow    : 4px 4px 0 var(--accent2), 0 0 40px rgba(255,215,0,.4);
+      line-height    : 1.5;
+      margin-bottom  : 18px;
+      letter-spacing : 4px;
+    }
+
+    .hero-sub {
+      font-family    : var(--font-vt);
+      font-size      : clamp(18px, 2.5vw, 26px);
+      color          : var(--txt-dim);
+      margin-bottom  : 50px;
+      letter-spacing : 2px;
+    }
+
+    .cta {
+      display        : inline-block;
+      font-family    : var(--font-pixel);
+      font-size      : 9px;
+      padding        : 16px 34px;
+      background     : transparent;
+      color          : var(--accent);
+      border         : 2px solid var(--accent);
+      cursor         : pointer;
+      letter-spacing : 2px;
+      text-decoration: none;
+      clip-path      : polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+      transition     : all .2s;
+    }
+    .cta:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 24px var(--accent); }
+
+    .hero-meta {
+      display         : flex;
+      gap             : 36px;
+      margin-top      : 64px;
+      justify-content : center;
+      flex-wrap       : wrap;
+    }
+    .hero-meta-item {
+      text-align  : center;
+      font-family : var(--font-pixel);
+      font-size   : 6px;
+      color       : var(--txt-dim);
+    }
+    .hero-meta-item span {
+      display     : block;
+      font-family : var(--font-vt);
+      font-size   : 26px;
+      color       : var(--accent);
+      margin-bottom: 4px;
+    }
+
+    /* ============================================================
+       SECTION 2 — SHOWCASE (SPLIT SCREEN)
+    ============================================================ */
+    #showcase {
+      background : var(--bg2);
+      padding    : 90px 20px 70px;
+    }
+
+    .split-wrap {
+      display               : grid;
+      grid-template-columns : 1fr 1fr;
+      gap                   : 18px;
+      max-width             : 1440px;
+      margin                : 0 auto;
+    }
+
+    @media (max-width: 960px) { .split-wrap { grid-template-columns: 1fr; } }
+
+    /* ---- Game Panel ---- */
+    .game-panel {
+      background      : var(--glass);
+      backdrop-filter : blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border          : 1px solid var(--gbord);
+      border-radius   : var(--rl);
+      display         : flex;
+      flex-direction  : column;
+      overflow        : hidden;
+      min-height      : 740px;
+      position        : relative;
+    }
+
+    .gp-header {
+      padding         : 10px 16px;
+      border-bottom   : 1px solid var(--gbord);
+      background      : rgba(0,0,0,.35);
+      display         : flex;
+      justify-content : space-between;
+      align-items     : center;
+    }
+    .gp-header h3 { font-family: var(--font-pixel); font-size: 8px; color: var(--accent); }
+
+    #round-display {
+      font-family   : var(--font-pixel);
+      font-size     : 6px;
+      padding       : 4px 10px;
+      border        : 1px solid var(--accent);
+      color         : var(--accent);
+      border-radius : 2px;
+    }
+
+    .gp-body {
+      display        : flex;
+      flex-direction : column;
+      flex           : 1;
+      padding        : 14px;
+      gap            : 10px;
+      overflow       : hidden;
+    }
+
+    .parties-grid {
+      display               : grid;
+      grid-template-columns : 1fr 1fr;
+      gap                   : 10px;
+    }
+
+    .party-col h4 {
+      font-family    : var(--font-pixel);
+      font-size      : 6px;
+      color          : var(--txt-dim);
+      margin-bottom  : 8px;
+      letter-spacing : 2px;
+    }
+
+    /* Character Card */
+    .cc {
+      background    : var(--card-bg);
+      border        : 1px solid var(--gbord);
+      border-radius : var(--r);
+      padding       : 9px 10px;
+      margin-bottom : 7px;
+      transition    : border-color .2s, box-shadow .2s;
+      position      : relative;
+      cursor        : default;
+    }
+    .cc.active-turn { border-color: var(--accent); box-shadow: 0 0 12px rgba(255,215,0,.25); }
+    .cc.dead        { opacity: .28; filter: grayscale(1); pointer-events: none; }
+
+    .cc.targetable  {
+      cursor        : crosshair;
+      border-color  : var(--hp);
+      animation     : tpulse .9s ease-in-out infinite;
+    }
+    .cc.targetable:hover { background: rgba(239,83,80,.18); }
+
+    .cc.ally-sel {
+      cursor        : pointer;
+      border-color  : var(--mana);
+      animation     : apulse .9s ease-in-out infinite;
+    }
+    .cc.ally-sel:hover { background: rgba(79,195,247,.15); }
+
+    @keyframes tpulse { 0%,100%{ box-shadow:0 0 5px rgba(239,83,80,.3); } 50%{ box-shadow:0 0 16px rgba(239,83,80,.7); } }
+    @keyframes apulse { 0%,100%{ box-shadow:0 0 5px rgba(79,195,247,.3); } 50%{ box-shadow:0 0 16px rgba(79,195,247,.7); } }
+
+    @keyframes shake {
+      0%,100%{ transform:translateX(0); }
+      20%{ transform:translateX(-5px); }
+      40%{ transform:translateX(5px); }
+      60%{ transform:translateX(-4px); }
+      80%{ transform:translateX(4px); }
+    }
+    .cc.hit { animation: shake .38s ease; }
+
+    .cc-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+
+    .cc-name { font-family: var(--font-pixel); font-size: 6px; color: var(--txt); }
+
+    .cc-badge {
+      font-family   : var(--font-pixel);
+      font-size     : 5px;
+      padding       : 2px 6px;
+      border-radius : 2px;
+      background    : rgba(255,215,0,.12);
+      color         : var(--accent);
+      border        : 1px solid rgba(255,215,0,.25);
+    }
+    .cc-badge.enemy {
+      background    : rgba(206,147,216,.12);
+      color         : var(--enemy);
+      border-color  : rgba(206,147,216,.25);
+    }
+
+    .stat-row { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
+
+    .sl {
+      font-family : var(--font-pixel);
+      font-size   : 5px;
+      color       : var(--txt-dim);
+      width       : 18px;
+      flex-shrink : 0;
+    }
+
+    .bar-wrap {
+      flex         : 1;
+      height       : 7px;
+      background   : rgba(0,0,0,.5);
+      border       : 1px solid rgba(255,255,255,.08);
+      border-radius: 1px;
+      overflow     : hidden;
+    }
+
+    .bar-fill {
+      height       : 100%;
+      transition   : width .5s ease;
+      border-radius: 1px;
+    }
+    .bar-fill.hp  { background: linear-gradient(90deg, var(--hp), #ff6b6b); }
+    .bar-fill.hp.low { background: linear-gradient(90deg, var(--hp-low), #ff5252); animation: blink-hp .8s ease-in-out infinite; }
+    .bar-fill.mp  { background: linear-gradient(90deg, var(--mana), #81d4fa); }
+
+    @keyframes blink-hp { 0%,100%{opacity:1;} 50%{opacity:.55;} }
+
+    .stat-num {
+      font-family : var(--font-vt);
+      font-size   : 13px;
+      color       : var(--txt-dim);
+      min-width   : 55px;
+      text-align  : right;
+    }
+
+    /* Damage float */
+    .dmg-float {
+      position       : absolute;
+      top            : 30%;
+      left           : 50%;
+      transform      : translateX(-50%);
+      font-family    : var(--font-pixel);
+      font-size      : 9px;
+      color          : var(--hp);
+      pointer-events : none;
+      z-index        : 50;
+      animation      : floatup .9s ease-out forwards;
+    }
+    .dmg-float.heal { color: var(--heal); }
+
+    @keyframes floatup { 0%{opacity:1;transform:translateX(-50%) translateY(0);} 100%{opacity:0;transform:translateX(-50%) translateY(-38px);} }
+
+    /* Action Panel */
+    .action-panel {
+      background    : var(--log-bg);
+      border        : 1px solid var(--gbord);
+      border-radius : var(--r);
+      padding       : 11px 12px;
+      min-height    : 72px;
+    }
+
+    #action-prompt {
+      font-family    : var(--font-pixel);
+      font-size      : 7px;
+      color          : var(--accent);
+      margin-bottom  : 9px;
+      min-height     : 16px;
+    }
+
+    .hint-enemy { color: var(--hp);   animation: ablink 1s step-end infinite; }
+    .hint-ally  { color: var(--mana); animation: ablink 1s step-end infinite; }
+    @keyframes ablink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+    #action-buttons { display: flex; flex-wrap: wrap; gap: 7px; }
+
+    .ab {
+      font-family    : var(--font-pixel);
+      font-size      : 6px;
+      padding        : 7px 12px;
+      background     : transparent;
+      border         : 1px solid var(--gbord);
+      color          : var(--txt);
+      cursor         : pointer;
+      border-radius  : var(--r);
+      letter-spacing : 1px;
+      transition     : all .18s;
+    }
+    .ab:disabled { opacity: .28; cursor: not-allowed; }
+    .ab:hover:not(:disabled) { background: rgba(255,215,0,.12); border-color: var(--accent); color: var(--accent); }
+    .ab.atk   { border-color: var(--hp);     color: var(--hp); }
+    .ab.atk:hover:not(:disabled) { background: rgba(239,83,80,.14); box-shadow: 0 0 8px rgba(239,83,80,.3); }
+    .ab.spell { border-color: var(--accent); color: var(--accent); }
+    .ab.spell:hover:not(:disabled){ background: rgba(255,215,0,.12); box-shadow: 0 0 8px rgba(255,215,0,.25); }
+    .ab.heal  { border-color: var(--mana);   color: var(--mana); }
+    .ab.heal:hover:not(:disabled) { background: rgba(79,195,247,.12); box-shadow: 0 0 8px rgba(79,195,247,.25); }
+    .ab.grd   { border-color: var(--txt-dim); color: var(--txt-dim); }
+
+    /* Battle Log */
+    .blog-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+    .blog-lbl {
+      font-family    : var(--font-pixel);
+      font-size      : 6px;
+      color          : var(--txt-dim);
+      margin-bottom  : 5px;
+      letter-spacing : 2px;
+    }
+
+    #battle-log {
+      flex         : 1;
+      background   : var(--log-bg);
+      border       : 1px solid var(--gbord);
+      border-radius: var(--r);
+      padding      : 9px 10px;
+      overflow-y   : auto;
+      max-height   : 190px;
+      min-height   : 110px;
+      font-family  : var(--font-vt);
+      font-size    : 15px;
+      line-height  : 1.5;
+    }
+
+    .ll { padding: 1px 0; animation: logslide .18s ease; }
+    @keyframes logslide { from{opacity:0;transform:translateX(-4px);} to{opacity:1;transform:none;} }
+
+    .ll.sep       { color: var(--txt-dim); opacity:.45; }
+    .ll.rnd       { color: var(--accent);  font-weight: bold; }
+    .ll.turn      { color: var(--mana); }
+    .ll.dmg       { color: var(--hp); }
+    .ll.hlg       { color: var(--heal); }
+    .ll.spl       { color: var(--accent2); }
+    .ll.enm       { color: var(--enemy); }
+    .ll.sys       { color: var(--txt-dim); font-style: italic; }
+    .ll.loot      { color: var(--heal); }
+    .ll.vic       { color: var(--accent); font-size: 18px; }
+    .ll.def       { color: var(--hp); font-size: 18px; }
+
+    /* Battle Over Overlay */
+    #battle-result {
+      display         : none;
+      position        : absolute;
+      inset           : 0;
+      background      : rgba(0,0,0,.88);
+      z-index         : 20;
+      flex-direction  : column;
+      justify-content : center;
+      align-items     : center;
+      gap             : 18px;
+      text-align      : center;
+      border-radius   : var(--rl);
+      padding         : 20px;
+    }
+    #battle-result.show { display: flex; animation: fadein .5s ease; }
+    @keyframes fadein { from{opacity:0;} to{opacity:1;} }
+
+    #result-title {
+      font-family : var(--font-pixel);
+      font-size   : clamp(14px, 3vw, 26px);
+      animation   : glowpulse 1.5s ease-in-out infinite;
+    }
+    #result-title.v { color: var(--accent); }
+    #result-title.d { color: var(--hp); }
+
+    @keyframes glowpulse {
+      0%,100%{ text-shadow: 0 0 10px currentColor; }
+      50%    { text-shadow: 0 0 30px currentColor, 0 0 60px currentColor; }
+    }
+
+    #result-loot {
+      background    : var(--glass);
+      border        : 1px solid var(--gbord);
+      border-radius : var(--r);
+      padding       : 14px 22px;
+      font-family   : var(--font-vt);
+      font-size     : 17px;
+      color         : var(--heal);
+      max-width     : 280px;
+      line-height   : 1.7;
+    }
+
+    .start-btn, .replay-btn {
+      font-family    : var(--font-pixel);
+      font-size      : 8px;
+      padding        : 13px 26px;
+      background     : transparent;
+      border         : 2px solid var(--accent);
+      color          : var(--accent);
+      cursor         : pointer;
+      letter-spacing : 2px;
+      transition     : all .2s;
+      clip-path      : polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    }
+    .start-btn:hover, .replay-btn:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 20px var(--accent); }
+
+    /* ---- Code Viewer ---- */
+    .code-viewer {
+      background      : var(--code-bg);
+      border          : 1px solid var(--code-bord);
+      border-radius   : var(--rl);
+      display         : flex;
+      flex-direction  : column;
+      overflow        : hidden;
+      min-height      : 740px;
+    }
+
+    .cv-chrome {
+      padding     : 10px 14px;
+      background  : rgba(0,0,0,.5);
+      border-bottom: 1px solid var(--code-bord);
+      display     : flex;
+      align-items : center;
+      gap         : 14px;
+    }
+
+    .cv-dots { display: flex; gap: 6px; }
+    .cv-dot  { width: 11px; height: 11px; border-radius: 50%; }
+    .dot-r   { background: #ff5f57; }
+    .dot-y   { background: #febc2e; }
+    .dot-g   { background: #28c840; }
+
+    .cv-fname {
+      font-family : var(--font-mono);
+      font-size   : 12px;
+      color       : #8b949e;
+      flex        : 1;
+      text-align  : center;
+    }
+
+    .cv-tabs {
+      display      : flex;
+      border-bottom: 1px solid var(--code-bord);
+      background   : rgba(0,0,0,.3);
+      overflow-x   : auto;
+    }
+
+    .cv-tab {
+      font-family    : var(--font-mono);
+      font-size      : 11px;
+      padding        : 9px 16px;
+      cursor         : pointer;
+      color          : #6e7681;
+      border-right   : 1px solid var(--code-bord);
+      border-bottom  : 2px solid transparent;
+      white-space    : nowrap;
+      background     : transparent;
+      border-top     : none;
+      border-left    : none;
+      transition     : all .18s;
+    }
+    .cv-tab:hover  { color: #e6edf3; background: rgba(255,255,255,.04); }
+    .cv-tab.active { color: #e6edf3; border-bottom-color: var(--accent); background: rgba(255,215,0,.05); }
+
+    .cv-body { flex: 1; overflow: auto; }
+
+    .cv-pane { display: none; }
+    .cv-pane.active { display: block; }
+
+    .cv-pane pre {
+      margin     : 0;
+      background : transparent !important;
+      padding    : 18px 20px !important;
+      font-family: var(--font-mono) !important;
+      font-size  : 12px !important;
+      line-height: 1.65 !important;
+      tab-size   : 4;
+    }
+
+    /* Override hljs background so our code-bg shows */
+    .hljs { background: transparent !important; }
+
+    /* ============================================================
+       SECTION 3 — OOP PRINCIPLES
+    ============================================================ */
+    #oop { background: var(--bg); }
+
+    .oop-grid {
+      display               : grid;
+      grid-template-columns : repeat(2, 1fr);
+      gap                   : 22px;
+      max-width             : 1000px;
+      margin                : 0 auto;
+    }
+    @media (max-width: 680px) { .oop-grid { grid-template-columns: 1fr; } }
+
+    .oop-card {
+      background      : var(--glass);
+      backdrop-filter : blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border          : 1px solid var(--gbord);
+      border-top      : 3px solid var(--card-line, var(--accent));
+      border-radius   : var(--rl);
+      padding         : 26px 24px;
+      position        : relative;
+      overflow        : hidden;
+      transition      : transform .25s, box-shadow .25s;
+    }
+    .oop-card:hover { transform: translateY(-5px); box-shadow: var(--gshadow); border-color: var(--card-line, var(--accent)); }
+
+    .oop-num {
+      position    : absolute;
+      top         : 14px;
+      right       : 18px;
+      font-family : var(--font-vt);
+      font-size   : 42px;
+      color       : var(--gbord);
+      line-height : 1;
+    }
+
+    .oop-icon  { font-size: 28px; margin-bottom: 14px; display: block; }
+
+    .oop-card h3 {
+      font-family    : var(--font-pixel);
+      font-size      : 9px;
+      color          : var(--card-line, var(--accent));
+      margin-bottom  : 12px;
+      letter-spacing : 2px;
+    }
+
+    .oop-card p {
+      font-family : var(--font-mono);
+      font-size   : 13px;
+      color       : var(--txt-dim);
+      line-height : 1.85;
+    }
+
+    .oop-card code {
+      font-family   : var(--font-mono);
+      background    : rgba(0,0,0,.3);
+      border        : 1px solid var(--gbord);
+      color         : var(--accent);
+      padding       : 1px 5px;
+      border-radius : 2px;
+      font-size     : 11px;
+    }
+    [data-theme="light"] .oop-card code { background: rgba(255,255,255,.5); }
+
+    /* ============================================================
+       SECTION 4 — ARCHITECTURE
+    ============================================================ */
+    #architecture { background: var(--bg2); }
+
+    .diag-grid {
+      display               : grid;
+      grid-template-columns : repeat(auto-fit, minmax(300px, 1fr));
+      gap                   : 22px;
+      max-width             : 1440px;
+      margin                : 0 auto;
+    }
+
+    .diag-card {
+      background      : var(--glass);
+      backdrop-filter : blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border          : 1px solid var(--gbord);
+      border-radius   : var(--rl);
+      overflow        : hidden;
+      transition      : border-color .25s, box-shadow .25s;
+    }
+    .diag-card:hover { border-color: var(--accent); box-shadow: var(--gshadow); }
+
+    .diag-hd {
+      padding       : 10px 18px;
+      border-bottom : 1px solid var(--gbord);
+      background    : rgba(0,0,0,.3);
+    }
+    .diag-hd h3 {
+      font-family    : var(--font-pixel);
+      font-size      : 8px;
+      color          : var(--accent);
+      letter-spacing : 2px;
+    }
+    .diag-hd p { font-family: var(--font-mono); font-size: 11px; color: var(--txt-dim); margin-top: 3px; }
+
+    .diag-body { padding: 18px; overflow-x: auto; }
+    .mermaid   { display: flex; justify-content: center; }
+
+    /* ============================================================
+       SECTION 5 — FOOTER
+    ============================================================ */
+    footer {
+      background   : var(--bg3);
+      border-top   : 1px solid var(--gbord);
+      padding      : 60px 40px 28px;
+    }
+
+    .foot-grid {
+      display               : grid;
+      grid-template-columns : 2fr 1fr 1fr;
+      gap                   : 44px;
+      max-width             : 1200px;
+      margin                : 0 auto 40px;
+    }
+    @media (max-width: 760px) { .foot-grid { grid-template-columns: 1fr; } }
+
+    .foot-brand h2 {
+      font-family    : var(--font-pixel);
+      font-size      : 10px;
+      color          : var(--accent);
+      margin-bottom  : 12px;
+      letter-spacing : 3px;
+      line-height    : 1.7;
+    }
+    .foot-brand p { font-family: var(--font-mono); font-size: 13px; color: var(--txt-dim); line-height: 1.8; max-width: 320px; }
+
+    .foot-col h4 {
+      font-family    : var(--font-pixel);
+      font-size      : 7px;
+      color          : var(--txt);
+      margin-bottom  : 18px;
+      letter-spacing : 2px;
+    }
+
+    .foot-col ul { list-style: none; }
+    .foot-col ul li {
+      font-family : var(--font-mono);
+      font-size   : 13px;
+      color       : var(--txt-dim);
+      margin-bottom: 8px;
+      display     : flex;
+      gap         : 8px;
+      align-items : flex-start;
+    }
+    .foot-col ul li::before { content: '▸'; color: var(--accent); flex-shrink: 0; font-size: 10px; padding-top: 2px; }
+
+    .ci { display: flex; flex-direction: column; gap: 9px; }
+    .ci-row { display: flex; gap: 10px; align-items: flex-start; }
+    .ci-lbl {
+      font-family  : var(--font-pixel);
+      font-size    : 5px;
+      color        : var(--accent);
+      min-width    : 56px;
+      padding-top  : 3px;
+      letter-spacing: 1px;
+    }
+    .ci-val { font-family: var(--font-mono); font-size: 13px; color: var(--txt-dim); word-break: break-all; }
+    .ci-val a { color: var(--mana); text-decoration: none; transition: color var(--ease); }
+    .ci-val a:hover { color: var(--accent); text-decoration: underline; }
+
+    .foot-bottom {
+      border-top      : 1px solid var(--gbord);
+      padding-top     : 22px;
+      display         : flex;
+      justify-content : space-between;
+      align-items     : center;
+      max-width       : 1200px;
+      margin          : 0 auto;
+      flex-wrap       : wrap;
+      gap             : 14px;
+    }
+    .foot-bottom p { font-family: var(--font-mono); font-size: 12px; color: var(--txt-dim); }
+
+    .tech-pills { display: flex; gap: 7px; flex-wrap: wrap; }
+    .tp-badge {
+      font-family   : var(--font-pixel);
+      font-size     : 5px;
+      padding       : 4px 9px;
+      border        : 1px solid var(--gbord);
+      color         : var(--txt-dim);
+      border-radius : 2px;
+      letter-spacing: 1px;
+    }
+
+    /* ============================================================
+       MISC UTILITIES
+    ============================================================ */
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     NAV
+============================================================ -->
+<nav id="nav" aria-label="Site navigation">
+  <span class="nav-logo">⚔ SIMRPG</span>
+  <div class="nav-links">
+    <a href="#showcase">PLAY</a>
+    <a href="#oop">OOP</a>
+    <a href="#architecture">UML</a>
+    <a href="#contact">ABOUT</a>
+    <button id="theme-btn" aria-label="Toggle light/dark mode">☀ LIGHT</button>
+  </div>
+</nav>
+
+<!-- ============================================================
+     SECTION 1 — HERO
+============================================================ -->
+<section id="hero" aria-label="Landing hero">
+  <canvas id="particles-canvas" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- Floating rune decorations -->
+  <div class="rune" style="top:12%;left:6%;--dur:7s;--dly:0s">⚔</div>
+  <div class="rune" style="top:25%;right:7%;--dur:5s;--dly:1s">✦</div>
+  <div class="rune" style="top:70%;left:4%;--dur:8s;--dly:2s">◈</div>
+  <div class="rune" style="top:60%;right:5%;--dur:6s;--dly:.5s">⬡</div>
+  <div class="rune" style="top:80%;left:18%;--dur:9s;--dly:3s">✧</div>
+  <div class="rune" style="top:15%;left:38%;--dur:6.5s;--dly:1.5s">◆</div>
+  <div class="rune" style="top:85%;right:18%;--dur:7.5s;--dly:.8s">⚡</div>
+
+  <div class="hero-inner">
+    <div class="hero-badge">OODP FINAL PROJECT — 2026</div>
+
+    <h1 class="hero-title">SIMRPG<br>RPG SIMULATOR</h1>
+    <p class="hero-sub">Object-Oriented Design &amp; Programming Final Project</p>
+
+    <a href="#showcase" class="cta">▶ PLAY WEB DEMO</a>
+
+    <div class="hero-meta">
+      <div class="hero-meta-item"><span>3</span>HERO CLASSES</div>
+      <div class="hero-meta-item"><span>4</span>OOP PILLARS</div>
+      <div class="hero-meta-item"><span>C++</span>BACKEND</div>
+      <div class="hero-meta-item"><span>∞</span>ROUNDS</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 2 — SHOWCASE
+============================================================ -->
+<section id="showcase" aria-label="Interactive showcase">
+  <div class="sec-head">
+    <span class="sec-tag">// SECTION 02</span>
+    <h2 class="sec-title">INTERACTIVE SHOWCASE</h2>
+    <div class="sec-rule"></div>
+  </div>
+
+  <div class="split-wrap">
+
+    <!-- ===== LEFT: JS GAME ===== -->
+    <div class="game-panel" aria-label="RPG battle simulator">
+      <div class="gp-header">
+        <h3>⚔ BATTLE ARENA</h3>
+        <span id="round-display">ROUND 1</span>
+      </div>
+
+      <div class="gp-body">
+
+        <!-- Character Cards Grid -->
+        <div class="parties-grid">
+          <!-- Heroes -->
+          <div class="party-col">
+            <h4>▸ HEROES</h4>
+            <div id="char-arthur" class="cc">
+              <div class="cc-head">
+                <span class="cc-name">ARTHUR</span>
+                <span class="cc-badge">WAR</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">HP</span>
+                <div class="bar-wrap"><div class="bar-fill hp" style="width:100%"></div></div>
+                <span class="stat-num hp-num">150/150</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">MP</span>
+                <div class="bar-wrap"><div class="bar-fill mp" style="width:100%"></div></div>
+                <span class="stat-num mp-num">20/20</span>
+              </div>
+            </div>
+
+            <div id="char-merlin" class="cc">
+              <div class="cc-head">
+                <span class="cc-name">MERLIN</span>
+                <span class="cc-badge">MAG</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">HP</span>
+                <div class="bar-wrap"><div class="bar-fill hp" style="width:100%"></div></div>
+                <span class="stat-num hp-num">80/80</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">MP</span>
+                <div class="bar-wrap"><div class="bar-fill mp" style="width:100%"></div></div>
+                <span class="stat-num mp-num">100/100</span>
+              </div>
+            </div>
+
+            <div id="char-elara" class="cc">
+              <div class="cc-head">
+                <span class="cc-name">ELARA</span>
+                <span class="cc-badge">HLR</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">HP</span>
+                <div class="bar-wrap"><div class="bar-fill hp" style="width:100%"></div></div>
+                <span class="stat-num hp-num">90/90</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">MP</span>
+                <div class="bar-wrap"><div class="bar-fill mp" style="width:100%"></div></div>
+                <span class="stat-num mp-num">120/120</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enemies -->
+          <div class="party-col">
+            <h4>▸ ENEMIES</h4>
+            <div id="char-goblin1" class="cc">
+              <div class="cc-head">
+                <span class="cc-name">GOBLIN SCOUT</span>
+                <span class="cc-badge enemy">ENMY</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">HP</span>
+                <div class="bar-wrap"><div class="bar-fill hp" style="width:100%"></div></div>
+                <span class="stat-num hp-num">60/60</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">MP</span>
+                <div class="bar-wrap"><div class="bar-fill mp" style="width:0%"></div></div>
+                <span class="stat-num mp-num">0/0</span>
+              </div>
+            </div>
+
+            <div id="char-orc" class="cc">
+              <div class="cc-head">
+                <span class="cc-name">ORC BRUTE</span>
+                <span class="cc-badge enemy">ENMY</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">HP</span>
+                <div class="bar-wrap"><div class="bar-fill hp" style="width:100%"></div></div>
+                <span class="stat-num hp-num">120/120</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">MP</span>
+                <div class="bar-wrap"><div class="bar-fill mp" style="width:0%"></div></div>
+                <span class="stat-num mp-num">0/0</span>
+              </div>
+            </div>
+
+            <div id="char-goblin2" class="cc">
+              <div class="cc-head">
+                <span class="cc-name">GOBLIN (CLONE)</span>
+                <span class="cc-badge enemy">ENMY</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">HP</span>
+                <div class="bar-wrap"><div class="bar-fill hp" style="width:100%"></div></div>
+                <span class="stat-num hp-num">60/60</span>
+              </div>
+              <div class="stat-row">
+                <span class="sl">MP</span>
+                <div class="bar-wrap"><div class="bar-fill mp" style="width:0%"></div></div>
+                <span class="stat-num mp-num">0/0</span>
+              </div>
+            </div>
+          </div>
+        </div><!-- /parties-grid -->
+
+        <!-- Action Panel -->
+        <div class="action-panel">
+          <div id="action-prompt">Press START to begin the battle.</div>
+          <div id="action-buttons">
+            <button class="start-btn" onclick="initGame()">▶ START BATTLE</button>
+          </div>
+        </div>
+
+        <!-- Battle Log -->
+        <div class="blog-wrap">
+          <div class="blog-lbl">// BATTLE LOG</div>
+          <div id="battle-log" role="log" aria-live="polite"></div>
+        </div>
+
+      </div><!-- /gp-body -->
+
+      <!-- Battle Over Overlay -->
+      <div id="battle-result" role="alert">
+        <div id="result-title" class="v">⚔ VICTORY ⚔</div>
+        <div id="result-loot"></div>
+        <button class="replay-btn" onclick="resetGame()">↺ PLAY AGAIN</button>
+      </div>
+    </div><!-- /game-panel -->
+
+    <!-- ===== RIGHT: CODE VIEWER ===== -->
+    <div class="code-viewer" aria-label="C++ source code viewer">
+      <div class="cv-chrome">
+        <div class="cv-dots">
+          <div class="cv-dot dot-r"></div>
+          <div class="cv-dot dot-y"></div>
+          <div class="cv-dot dot-g"></div>
+        </div>
+        <span class="cv-fname">one_bullet_rpg — C++ Source</span>
+      </div>
+      <div class="cv-tabs" role="tablist">
+        <button class="cv-tab active" role="tab" aria-selected="true"  onclick="switchTab('main', this)">main.cpp</button>
+        <button class="cv-tab"        role="tab" aria-selected="false" onclick="switchTab('classes', this)">Classes &amp; Inheritance</button>
+        <button class="cv-tab"        role="tab" aria-selected="false" onclick="switchTab('poly', this)">Polymorphism</button>
+      </div>
+      <div class="cv-body">
+
+        <!-- Tab: main.cpp (full file, no comments) -->
+        <div id="tab-main" class="cv-pane active">
+<pre><code class="language-cpp">#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+#include &lt;map&gt;
+#include &lt;algorithm&gt;
+#include &lt;exception&gt;
+#include &lt;cstdlib&gt;
+#include &lt;ctime&gt;
+
+using namespace std;
+
+class insuffmana : public exception {
+public:
+    const char* what() const throw() {
+        return "Not enough mana!";
+    }
+};
+
+template &lt;typename T&gt;
+class lootbx {
+private:
+    T itm;
+public:
+    lootbx(T i) : itm(i) {}
+    T open() { return itm; }
+};
+
+class chrctr {
+protected:
+    string nm;
+    int hp;
+    int mxhp;
+    int mn;
+    int spd;
+    bool ishro;
+public:
+    chrctr(string n, int h, int m, int s, bool hroflag)
+        : nm(n), hp(h), mxhp(h), mn(m), spd(s), ishro(hroflag) {}
+    virtual ~chrctr() {}
+    virtual void act(chrctr* tgt) = 0;
+    int getspd() const { return spd; }
+    string getnm() const { return nm; }
+    int gethp() const { return hp; }
+    int getmn() const { return mn; }
+    bool getishro() const { return ishro; }
+    bool isalv() const { return hp &gt; 0; }
+    friend ostream&amp; operator&lt;&lt;(ostream&amp; os, const chrctr&amp; c) {
+        os &lt;&lt; c.nm &lt;&lt; " [HP: " &lt;&lt; c.hp &lt;&lt; "/" &lt;&lt; c.mxhp
+           &lt;&lt; " | MP: " &lt;&lt; c.mn &lt;&lt; "]";
+        return os;
+    }
+    void tkdmg(int dmg) {
+        hp -= dmg;
+        if (hp &lt; 0) hp = 0;
+        cout &lt;&lt; nm &lt;&lt; " takes " &lt;&lt; dmg &lt;&lt; " damage! (HP: " &lt;&lt; hp &lt;&lt; ")\n";
+    }
+    void hl(int amt) {
+        hp += amt;
+        if (hp &gt; mxhp) hp = mxhp;
+        cout &lt;&lt; nm &lt;&lt; " is healed for " &lt;&lt; amt &lt;&lt; "! (HP: " &lt;&lt; hp &lt;&lt; ")\n";
+    }
+    void decmn(int amt) {
+        mn -= amt;
+        if (mn &lt; 0) mn = 0;
+    }
+};
+
+class war : public chrctr {
+public:
+    war(string n) : chrctr(n, 150, 20, 10, true) {}
+    void act(chrctr* tgt) override {
+        cout &lt;&lt; nm &lt;&lt; " swings a broadsword at " &lt;&lt; tgt-&gt;getnm() &lt;&lt; "!\n";
+        tgt-&gt;tkdmg(25);
+    }
+    void operator+(int hlamt) { hl(hlamt); }
+};
+
+class mag : public chrctr {
+private:
+    map&lt;string, int&gt; splbk;
+public:
+    mag(string n) : chrctr(n, 80, 100, 15, true) {
+        splbk["Fireball"]  = 30;
+        splbk["IceStrike"] = 20;
+    }
+    void act(chrctr* tgt) override { cstspl("Fireball", tgt); }
+    void cstspl(string splnm, chrctr* tgt) {
+        if (splbk.find(splnm) == splbk.end()) {
+            cout &lt;&lt; "Spell not found!\n"; return;
+        }
+        int cst = splbk[splnm];
+        if (mn &lt; cst) throw insuffmana();
+        decmn(cst);
+        cout &lt;&lt; nm &lt;&lt; " casts " &lt;&lt; splnm &lt;&lt; " on " &lt;&lt; tgt-&gt;getnm() &lt;&lt; "!\n";
+        if      (splnm == "Fireball")  tgt-&gt;tkdmg(40);
+        else if (splnm == "IceStrike") tgt-&gt;tkdmg(25);
+    }
+    void shwspls() {
+        for (auto const&amp; spl : splbk)
+            cout &lt;&lt; "-" &lt;&lt; spl.first &lt;&lt; " (" &lt;&lt; spl.second &lt;&lt; " MP) ";
+        cout &lt;&lt; "\n";
+    }
+};
+
+class hlr : public chrctr {
+public:
+    hlr(string n) : chrctr(n, 90, 120, 14, true) {}
+    void act(chrctr* tgt) override {
+        if (mn &lt; 25) throw insuffmana();
+        decmn(25);
+        cout &lt;&lt; nm &lt;&lt; " casts Divine Light on " &lt;&lt; tgt-&gt;getnm() &lt;&lt; "!\n";
+        tgt-&gt;hl(40);
+    }
+};
+
+class enmy : public chrctr {
+public:
+    enmy(string n, int h, int m, int s) : chrctr(n, h, m, s, false) {}
+    enmy(const enmy&amp; e) : chrctr(e.nm + " (Clone)", e.hp, e.mn, e.spd, false) {}
+    void act(chrctr* tgt) override {
+        cout &lt;&lt; nm &lt;&lt; " attacks " &lt;&lt; tgt-&gt;getnm() &lt;&lt; "!\n";
+        tgt-&gt;tkdmg(15);
+    }
+};
+
+bool cmpspd(chrctr* a, chrctr* b) { return a-&gt;getspd() &gt; b-&gt;getspd(); }
+
+int main() {
+    srand(time(0));
+    war p1("Arthur");
+    mag p2("Merlin");
+    hlr p3("Elara");
+    enmy e1("Goblin Scout", 60, 0, 12);
+    enmy e2("Orc Brute", 120, 0, 8);
+    enmy e3 = e1;
+
+    vector&lt;chrctr*&gt; hros = {&amp;p1, &amp;p2, &amp;p3};
+    vector&lt;chrctr*&gt; enms = {&amp;e1, &amp;e2, &amp;e3};
+
+    cout &lt;&lt; "=== RPG BATTLE INITIATED ===\n\n";
+
+    bool btlactv = true;
+    int rnd = 1;
+
+    while (btlactv) {
+        cout &lt;&lt; "\n--- ROUND " &lt;&lt; rnd &lt;&lt; " ---\n";
+
+        vector&lt;chrctr*&gt; nxtturn;
+        for (auto h : hros) if (h-&gt;isalv()) nxtturn.push_back(h);
+        for (auto e : enms) if (e-&gt;isalv()) nxtturn.push_back(e);
+        if (nxtturn.empty()) break;
+
+        sort(nxtturn.begin(), nxtturn.end(), cmpspd);
+
+        for (auto curturn : nxtturn) {
+            if (!curturn-&gt;isalv()) continue;
+
+            bool hroalv = false, enmalv = false;
+            for (auto h : hros) if (h-&gt;isalv()) hroalv = true;
+            for (auto e : enms) if (e-&gt;isalv()) enmalv = true;
+            if (!hroalv || !enmalv) { btlactv = false; break; }
+
+            if (curturn-&gt;getishro()) {
+                vector&lt;chrctr*&gt; alveanime, alvhros;
+                for (auto e : enms) if (e-&gt;isalv()) alveanime.push_back(e);
+                for (auto h : hros) if (h-&gt;isalv()) alvhros.push_back(h);
+
+                int chc;
+                cin &gt;&gt; chc;
+
+                if (chc == 1) {
+                    int tgtchc; cin &gt;&gt; tgtchc;
+                    if (tgtchc &gt; 0 &amp;&amp; tgtchc &lt;= (int)alveanime.size())
+                        curturn-&gt;act(alveanime[tgtchc - 1]);
+                } else if (chc == 3 &amp;&amp; dynamic_cast&lt;mag*&gt;(curturn)) {
+                    mag* m = dynamic_cast&lt;mag*&gt;(curturn);
+                    string splchc; cin &gt;&gt; splchc;
+                    int tgtchc;   cin &gt;&gt; tgtchc;
+                    if (tgtchc &gt; 0 &amp;&amp; tgtchc &lt;= (int)alveanime.size()) {
+                        try { m-&gt;cstspl(splchc, alveanime[tgtchc - 1]); }
+                        catch (insuffmana&amp; e) { cout &lt;&lt; e.what() &lt;&lt; " Turn wasted.\n"; }
+                    }
+                } else if (chc == 3 &amp;&amp; dynamic_cast&lt;hlr*&gt;(curturn)) {
+                    int tgtchc; cin &gt;&gt; tgtchc;
+                    if (tgtchc &gt; 0 &amp;&amp; tgtchc &lt;= (int)alvhros.size()) {
+                        try { curturn-&gt;act(alvhros[tgtchc - 1]); }
+                        catch (insuffmana&amp; e) { cout &lt;&lt; e.what() &lt;&lt; " Turn wasted.\n"; }
+                    }
+                } else { cout &lt;&lt; curturn-&gt;getnm() &lt;&lt; " guards.\n"; }
+            } else {
+                vector&lt;chrctr*&gt; alvhros;
+                for (auto h : hros) if (h-&gt;isalv()) alvhros.push_back(h);
+                if (!alvhros.empty()) {
+                    int rndtgt = rand() % alvhros.size();
+                    curturn-&gt;act(alvhros[rndtgt]);
+                }
+            }
+        }
+        rnd++;
+    }
+
+    cout &lt;&lt; "\n=== BATTLE CONCLUDED ===\n";
+    bool vic = false;
+    for (auto h : hros) if (h-&gt;isalv()) vic = true;
+
+    if (vic) {
+        cout &lt;&lt; "VICTORY! The heroes have triumphed.\n";
+        lootbx&lt;string&gt; epcloot("Staff of the Archmagus");
+        lootbx&lt;int&gt;    gldloot(1500);
+        cout &lt;&lt; "- " &lt;&lt; epcloot.open() &lt;&lt; "\n";
+        cout &lt;&lt; "- " &lt;&lt; gldloot.open() &lt;&lt; " Gold\n";
+    } else {
+        cout &lt;&lt; "DEFEAT! The party has fallen.\n";
+    }
+    return 0;
+}</code></pre>
+        </div>
+
+        <!-- Tab: Classes & Inheritance -->
+        <div id="tab-classes" class="cv-pane">
+<pre><code class="language-cpp">/* ── Base class: chrctr (Character) ── */
+class chrctr {
+protected:
+    string nm;   int hp;  int mxhp;
+    int mn;      int spd; bool ishro;
+public:
+    chrctr(string n, int h, int m, int s, bool hroflag)
+        : nm(n), hp(h), mxhp(h), mn(m), spd(s), ishro(hroflag) {}
+    virtual ~chrctr() {}
+    virtual void act(chrctr* tgt) = 0;   // pure virtual
+    bool isalv() const { return hp &gt; 0; }
+    void tkdmg(int dmg) { hp -= dmg; if (hp &lt; 0) hp = 0; }
+    void hl(int amt)    { hp += amt; if (hp &gt; mxhp) hp = mxhp; }
+    void decmn(int amt) { mn -= amt; if (mn &lt; 0) mn = 0; }
+    // Getters: getspd(), getnm(), gethp(), getmn(), getishro()
+};
+
+/* ── Derived: war (Warrior) — inherits chrctr ── */
+class war : public chrctr {
+public:
+    war(string n) : chrctr(n, 150, 20, 10, true) {}
+    void act(chrctr* tgt) override {       // override virtual
+        tgt-&gt;tkdmg(25);
+    }
+    void operator+(int hlamt) { hl(hlamt); } // operator overload
+};
+
+/* ── Derived: mag (Mage) — inherits chrctr ── */
+class mag : public chrctr {
+private:
+    map&lt;string, int&gt; splbk;   // spell book
+public:
+    mag(string n) : chrctr(n, 80, 100, 15, true) {
+        splbk["Fireball"]  = 30;
+        splbk["IceStrike"] = 20;
+    }
+    void act(chrctr* tgt) override { cstspl("Fireball", tgt); }
+    void cstspl(string splnm, chrctr* tgt) {
+        int cst = splbk[splnm];
+        if (mn &lt; cst) throw insuffmana();  // custom exception
+        decmn(cst);
+        if      (splnm == "Fireball")  tgt-&gt;tkdmg(40);
+        else if (splnm == "IceStrike") tgt-&gt;tkdmg(25);
+    }
+};
+
+/* ── Derived: hlr (Healer) — inherits chrctr ── */
+class hlr : public chrctr {
+public:
+    hlr(string n) : chrctr(n, 90, 120, 14, true) {}
+    void act(chrctr* tgt) override {
+        if (mn &lt; 25) throw insuffmana();
+        decmn(25);
+        tgt-&gt;hl(40);
+    }
+};
+
+/* ── Derived: enmy (Enemy) — inherits chrctr ── */
+class enmy : public chrctr {
+public:
+    enmy(string n, int h, int m, int s)
+        : chrctr(n, h, m, s, false) {}
+    enmy(const enmy&amp; e)  // copy constructor → "Clone"
+        : chrctr(e.nm + " (Clone)", e.hp, e.mn, e.spd, false) {}
+    void act(chrctr* tgt) override { tgt-&gt;tkdmg(15); }
+};
+
+/* ── Inheritance tree ──
+   chrctr  (abstract base)
+   ├── war   (Warrior  — 150HP, 20MP, spd 10)
+   ├── mag   (Mage     —  80HP,100MP, spd 15)
+   ├── hlr   (Healer   —  90HP,120MP, spd 14)
+   └── enmy  (Enemy    — variable stats)
+*/</code></pre>
+        </div>
+
+        <!-- Tab: Polymorphism -->
+        <div id="tab-poly" class="cv-pane">
+<pre><code class="language-cpp">/* ══════════════════════════════════════════
+   POLYMORPHISM IN SIMRPG RPG
+   ══════════════════════════════════════════ */
+
+/* 1. PURE VIRTUAL METHOD — act() in base class
+   Forces every subclass to implement its own act(). */
+class chrctr {
+public:
+    virtual void act(chrctr* tgt) = 0;  // pure virtual
+    virtual ~chrctr() {}
+};
+
+/* 2. METHOD OVERRIDING — each class has its own act() */
+void war::act(chrctr* tgt) override {   // melee swing
+    tgt-&gt;tkdmg(25);
+}
+void mag::act(chrctr* tgt) override {   // auto-cast Fireball
+    cstspl("Fireball", tgt);
+}
+void hlr::act(chrctr* tgt) override {   // cast Divine Light
+    if (mn &lt; 25) throw insuffmana();
+    decmn(25); tgt-&gt;hl(40);
+}
+void enmy::act(chrctr* tgt) override {  // basic attack
+    tgt-&gt;tkdmg(15);
+}
+
+/* 3. RUNTIME POLYMORPHISM — unified turn loop
+   nxtturn holds chrctr* pointers; act() dispatches
+   to the correct override at runtime. */
+for (auto curturn : nxtturn) {
+    curturn-&gt;act(target);  // virtual dispatch
+}
+
+/* 4. dynamic_cast — type-checking at runtime */
+if (dynamic_cast&lt;mag*&gt;(curturn)) {
+    mag* m = dynamic_cast&lt;mag*&gt;(curturn);
+    m-&gt;cstspl(splchc, alveanime[tgtchc - 1]);
+}
+if (dynamic_cast&lt;hlr*&gt;(curturn)) {
+    curturn-&gt;act(alvhros[tgtchc - 1]);
+}
+
+/* 5. OPERATOR OVERLOADING — war class */
+void war::operator+(int hlamt) { hl(hlamt); }
+// Usage:  p1 + 30;  // heals Arthur for 30 HP
+
+/* 6. STREAM OPERATOR OVERLOADING — chrctr */
+friend ostream&amp; operator&lt;&lt;(ostream&amp; os, const chrctr&amp; c) {
+    os &lt;&lt; c.nm &lt;&lt; " [HP: " &lt;&lt; c.hp &lt;&lt; "/" &lt;&lt; c.mxhp
+       &lt;&lt; " | MP: " &lt;&lt; c.mn &lt;&lt; "]";
+    return os;
+}
+
+/* 7. GENERIC TEMPLATES — lootbx&lt;T&gt;
+   Works with any type: string, int, etc. */
+template &lt;typename T&gt;
+class lootbx {
+private:
+    T itm;
+public:
+    lootbx(T i) : itm(i) {}
+    T open() { return itm; }
+};
+lootbx&lt;string&gt; epcloot("Staff of the Archmagus");
+lootbx&lt;int&gt;    gldloot(1500);
+
+/* 8. CUSTOM EXCEPTION — insuffmana
+   Thrown whenever a skill costs more MP than available. */
+class insuffmana : public exception {
+public:
+    const char* what() const throw() {
+        return "Not enough mana!";
+    }
+};
+// Usage in mag::cstspl():
+if (mn &lt; cst) throw insuffmana();
+// Caught in main():
+try { m-&gt;cstspl(splchc, target); }
+catch (insuffmana&amp; e) { cout &lt;&lt; e.what(); }</code></pre>
+        </div>
+
+      </div><!-- /cv-body -->
+    </div><!-- /code-viewer -->
+
+  </div><!-- /split-wrap -->
+</section>
+
+<!-- ============================================================
+     SECTION 3 — OOP PRINCIPLES
+============================================================ -->
+<section id="oop" aria-label="OOP principles">
+  <div class="sec-head">
+    <span class="sec-tag">// SECTION 03</span>
+    <h2 class="sec-title">THE FOUR OOP PILLARS</h2>
+    <div class="sec-rule"></div>
+  </div>
+
+  <div class="oop-grid">
+
+    <div class="oop-card" style="--card-line:#ffd700">
+      <span class="oop-num">01</span>
+      <span class="oop-icon">🔒</span>
+      <h3>ENCAPSULATION</h3>
+      <p>
+        The <code>chrctr</code> class hides its data (<code>nm</code>, <code>hp</code>, <code>mxhp</code>, <code>mn</code>, <code>spd</code>) behind <code>protected</code> visibility. External code can only read stats through controlled getters like <code>gethp()</code>, <code>getmn()</code>, and <code>getspd()</code>, while mutations like <code>tkdmg()</code>, <code>hl()</code>, and <code>decmn()</code> enforce invariants (HP never goes negative, never exceeds <code>mxhp</code>). The <code>mag</code> class further encapsulates its <code>splbk</code> spell book as a <code>private</code> member, exposed only through <code>cstspl()</code> and <code>shwspls()</code>.
+      </p>
+    </div>
+
+    <div class="oop-card" style="--card-line:#4fc3f7">
+      <span class="oop-num">02</span>
+      <span class="oop-icon">🌳</span>
+      <h3>INHERITANCE</h3>
+      <p>
+        All character types derive from the single abstract base <code>chrctr</code>. Hero classes <code>war</code>, <code>mag</code>, and <code>hlr</code> inherit shared logic (stats, <code>tkdmg</code>, <code>hl</code>, <code>decmn</code>) and provide their own stats via constructor chaining. <code>enmy</code> also inherits <code>chrctr</code> and adds a copy constructor that creates a named <em>Clone</em> — mirroring the <code>enmy e3 = e1;</code> line in <code>main()</code>. This eliminates code duplication across all five concrete types.
+      </p>
+    </div>
+
+    <div class="oop-card" style="--card-line:#ce93d8">
+      <span class="oop-num">03</span>
+      <span class="oop-icon">⚡</span>
+      <h3>POLYMORPHISM</h3>
+      <p>
+        The pure-virtual <code>act(chrctr*)</code> in <code>chrctr</code> enables runtime dispatch: the same <code>curturn-&gt;act(target)</code> call fires a warrior's broadsword swing, a mage's fireball, a healer's divine light, or an enemy attack — depending on the object's true type. <code>dynamic_cast</code> is used to query whether <code>curturn</code> is a <code>mag*</code> or <code>hlr*</code> at runtime to unlock class-specific menus. Operator overloading gives <code>war</code> a <code>+</code> operator for healing, and <code>chrctr</code> overloads <code>&lt;&lt;</code> for pretty-printing.
+      </p>
+    </div>
+
+    <div class="oop-card" style="--card-line:#66bb6a">
+      <span class="oop-num">04</span>
+      <span class="oop-icon">📦</span>
+      <h3>GENERIC TEMPLATES &amp; EXCEPTIONS</h3>
+      <p>
+        The <code>lootbx&lt;T&gt;</code> template class is type-agnostic: it stores a <code>string</code> weapon name or an <code>int</code> gold amount with the same interface. The custom exception <code>insuffmana</code> extends <code>std::exception</code> and is thrown by <code>mag::cstspl()</code> and <code>hlr::act()</code> whenever MP falls short of a spell's cost — caught with a <code>try/catch</code> block in <code>main()</code> to waste the turn gracefully instead of crashing.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 4 — ARCHITECTURE
+============================================================ -->
+<section id="architecture" aria-label="System architecture diagrams">
+  <div class="sec-head">
+    <span class="sec-tag">// SECTION 04</span>
+    <h2 class="sec-title">SYSTEM ARCHITECTURE</h2>
+    <div class="sec-rule"></div>
+  </div>
+
+  <div class="diag-grid">
+
+    <div class="diag-card">
+      <div class="diag-hd">
+        <h3>CLASS DIAGRAM</h3>
+        <p>Inheritance hierarchy from chrctr base</p>
+      </div>
+      <div class="diag-body">
+        <div class="mermaid">
+classDiagram
+    class chrctr {
+        #string nm
+        #int hp
+        #int mxhp
+        #int mn
+        #int spd
+        #bool ishro
+        +act(chrctr* tgt)*
+        +tkdmg(int dmg)
+        +hl(int amt)
+        +decmn(int amt)
+        +isalv() bool
+        +gethp() int
+        +getmn() int
+        +getspd() int
+        +getishro() bool
+    }
+    class war {
+        +act(chrctr* tgt)
+        +operator+(int)
+    }
+    class mag {
+        -map splbk
+        +act(chrctr* tgt)
+        +cstspl(string, chrctr*)
+        +shwspls()
+    }
+    class hlr {
+        +act(chrctr* tgt)
+    }
+    class enmy {
+        +act(chrctr* tgt)
+        +enmy(enmy copy)
+    }
+    class lootbx~T~ {
+        -T itm
+        +open() T
+    }
+    class insuffmana {
+        +what() char*
+    }
+    chrctr &lt;|-- war
+    chrctr &lt;|-- mag
+    chrctr &lt;|-- hlr
+    chrctr &lt;|-- enmy
+    exception &lt;|-- insuffmana
+        </div>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-hd">
+        <h3>SEQUENCE DIAGRAM</h3>
+        <p>Hero turn — action to resolution</p>
+      </div>
+      <div class="diag-body">
+        <div class="mermaid">
+sequenceDiagram
+    participant P as Player
+    participant H as Hero (chrctr*)
+    participant E as Enemy (chrctr*)
+    participant G as Game Loop
+
+    G->>H: Your turn (getishro() == true)
+    P->>H: Choose action (Attack / Spell / Heal)
+    alt Attack
+        H->>E: act(enemy*)
+        E-->>H: tkdmg(25)
+        Note over E: HP decreases
+    else Cast Spell (mag)
+        H->>H: cstspl("Fireball", enemy*)
+        H->>H: decmn(30)
+        H->>E: tkdmg(40)
+        Note over E: Fire damage applied
+    else Heal (hlr)
+        H->>H: act(ally*)
+        H->>H: decmn(25)
+        H-->>H: hl(40)
+        Note over H: Ally HP restored
+    end
+    G-->>G: Advance nxtturn index
+    G->>E: Enemy turn (getishro() == false)
+    E->>H: act(random hero*)
+    H-->>E: tkdmg(15)
+    G-->>G: Check hroalv &amp;&amp; enmalv
+        </div>
+      </div>
+    </div>
+
+    <div class="diag-card">
+      <div class="diag-hd">
+        <h3>GAME LOOP FLOWCHART</h3>
+        <p>Main btlactv loop with nxtturn ordering</p>
+      </div>
+      <div class="diag-body">
+        <div class="mermaid">
+flowchart TD
+    A([START]) --> B[Init heroes war mag hlr\nInit enms enmy x3]
+    B --> C{btlactv == true?}
+    C -->|No| Z([END])
+    C -->|Yes| D[Build nxtturn\nsort by cmpspd]
+    D --> E{nxtturn empty?}
+    E -->|Yes| Z
+    E -->|No| F[Pop curturn]
+    F --> G{curturn isalv?}
+    G -->|No| F
+    G -->|Yes| H{curturn getishro?}
+    H -->|Hero| I[Show action menu\nPlayer chooses]
+    I --> J{Action?}
+    J -->|Attack| K[act on alveanime target\ntkdmg 25]
+    J -->|Spell| L{mn sufficient?\ninsufficmana check}
+    L -->|Yes| M[cstspl — tkdmg 40 or 25\ndecmn cost]
+    L -->|No| N[Throw insuffmana\nTurn wasted]
+    J -->|Heal| O{mn >= 25?}
+    O -->|Yes| P[act on ally\nhl 40 decmn 25]
+    O -->|No| N
+    J -->|Guard| Q[Skip turn]
+    H -->|Enemy| R[Random alvhros target\nact — tkdmg 15]
+    K --> S{hroalv AND enmalv?}
+    M --> S
+    P --> S
+    R --> S
+    Q --> S
+    N --> S
+    S -->|No| T{Heroes alive?}
+    T -->|Yes| U[VICTORY\nlootbx open]
+    T -->|No| V[DEFEAT]
+    U --> Z
+    V --> Z
+    S -->|Yes| F
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 5 — FOOTER
+============================================================ -->
+<footer id="contact" aria-label="Portfolio contact information">
+  <div class="foot-grid">
+
+    <div class="foot-brand">
+      <h2>SIMRPG<br>RPG SIMULATOR</h2>
+      <p>
+        A Turn-Based RPG Battle Simulator built as the final project for the
+        Object-Oriented Design &amp; Programming course. Designed in C++ with
+        full OOP architecture — polymorphism, inheritance, templates, and
+        custom exceptions — and visualised here as an interactive web
+        portfolio using vanilla JS, CSS glassmorphism, and Mermaid.js UML.
+      </p>
+    </div>
+
+    <div class="foot-col">
+      <h4>TECH STACK</h4>
+      <ul>
+        <li>C++17 (backend logic)</li>
+        <li>HTML5 / CSS3</li>
+        <li>Vanilla JavaScript</li>
+        <li>Mermaid.js (UML)</li>
+        <li>Highlight.js (syntax)</li>
+        <li>Google Fonts</li>
+      </ul>
+    </div>
+
+    <div class="foot-col">
+      <h4>CONTACT</h4>
+      <div class="ci">
+        <div class="ci-row">
+          <span class="ci-lbl">NAME</span>
+          <span class="ci-val">Falullah S</span>
+        </div>
+        <div class="ci-row">
+          <span class="ci-lbl">REG NO</span>
+          <span class="ci-val">RA2511026011416</span>
+        </div>
+        <div class="ci-row">
+          <span class="ci-lbl">EMAIL</span>
+          <span class="ci-val">
+            <a href="mailto:Falullahs123@gmail.com">Falullahs123@gmail.com</a>
+          </span>
+        </div>
+        <div class="ci-row">
+          <span class="ci-lbl">GITHUB</span>
+          <span class="ci-val">
+            <a href="https://github.com/gglshtasd" target="_blank" rel="noopener noreferrer">github.com/gglshtasd</a>
+          </span>
+        </div>
+        <div class="ci-row">
+          <span class="ci-lbl">LINKEDIN</span>
+          <span class="ci-val">
+            <a href="https://linkedin.com/in/falullah-s-639b8237a" target="_blank" rel="noopener noreferrer">linkedin.com/in/falullah-s-639b8237a</a>
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot-bottom">
+    <p>© 2026 Falullah S · RA2511026011416 · OODP Final Project</p>
+    <div class="tech-pills">
+      <span class="tp-badge">C++17</span>
+      <span class="tp-badge">HTML5</span>
+      <span class="tp-badge">CSS3</span>
+      <span class="tp-badge">VANILLA JS</span>
+      <span class="tp-badge">MERMAID.JS</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+/* ============================================================
+   THEME TOGGLE
+============================================================ */
+const root = document.documentElement;
+const themeBtn = document.getElementById('theme-btn');
+
+themeBtn.addEventListener('click', () => {
+  const isDark = root.getAttribute('data-theme') === 'dark';
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  themeBtn.textContent = isDark ? '🌙 DARK' : '☀ LIGHT';
+  // Re-render mermaid with matching theme
+  renderMermaid(isDark ? 'dark' : 'default');
+});
+
+/* ============================================================
+   PARTICLES CANVAS
+============================================================ */
+(function initParticles() {
+  const canvas = document.getElementById('particles-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  const PARTICLE_COUNT = 55;
+
+  function resize() {
+    W = canvas.width  = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  function mkParticle() {
+    return {
+      x    : Math.random() * W,
+      y    : Math.random() * H,
+      r    : Math.random() * 1.8 + 0.4,
+      vx   : (Math.random() - 0.5) * 0.35,
+      vy   : (Math.random() - 0.5) * 0.35,
+      alpha: Math.random() * 0.5 + 0.15,
+    };
+  }
+
+  function init() {
+    resize();
+    particles = Array.from({ length: PARTICLE_COUNT }, mkParticle);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const isDark = root.getAttribute('data-theme') === 'dark';
+    const col    = isDark ? '255,215,0' : '139,32,0';
+
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W;
+      if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H;
+      if (p.y > H) p.y = 0;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${col},${p.alpha})`;
+      ctx.fill();
+    });
+
+    // draw faint connecting lines between close particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 90) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(${col},${0.06 * (1 - dist / 90)})`;
+          ctx.lineWidth   = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); });
+  init();
+  draw();
+})();
+
+/* ============================================================
+   CODE VIEWER TABS
+============================================================ */
+function switchTab(name, tabEl) {
+  document.querySelectorAll('.cv-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.cv-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  tabEl.classList.add('active');
+}
+
+/* ============================================================
+   HIGHLIGHT.JS INIT
+============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('pre code').forEach(block => {
+    hljs.highlightElement(block);
+  });
+});
+
+/* ============================================================
+   MERMAID INIT
+============================================================ */
+function renderMermaid(theme) {
+  mermaid.initialize({
+    startOnLoad   : false,
+    theme         : theme || 'dark',
+    fontFamily    : "'Share Tech Mono', monospace",
+    fontSize      : 13,
+    securityLevel : 'loose',
+    classDiagram  : { useMaxWidth: true },
+  });
+  mermaid.run({ querySelector: '.mermaid' });
+}
+
+document.addEventListener('DOMContentLoaded', () => renderMermaid('dark'));
+
+/* ============================================================
+   GAME STATE
+============================================================ */
+const HERO_DEFS = [
+  { id: 'arthur', name: 'Arthur',       cls: 'war', maxHp: 150, maxMp: 20,  spd: 10, ishro: true  },
+  { id: 'merlin', name: 'Merlin',       cls: 'mag', maxHp: 80,  maxMp: 100, spd: 15, ishro: true  },
+  { id: 'elara',  name: 'Elara',        cls: 'hlr', maxHp: 90,  maxMp: 120, spd: 14, ishro: true  },
+];
+const ENEMY_DEFS = [
+  { id: 'goblin1', name: 'Goblin Scout',  cls: 'enmy', maxHp: 60,  maxMp: 0, spd: 12, ishro: false },
+  { id: 'orc',     name: 'Orc Brute',     cls: 'enmy', maxHp: 120, maxMp: 0, spd: 8,  ishro: false },
+  { id: 'goblin2', name: 'Goblin (Clone)',cls: 'enmy', maxHp: 60,  maxMp: 0, spd: 12, ishro: false },
+];
+
+let gs = {};   // game state
+
+function freshChar(def) {
+  return { ...def, hp: def.maxHp, mp: def.maxMp };
+}
+
+function initGame() {
+  gs = {
+    heroes   : HERO_DEFS.map(freshChar),
+    enemies  : ENEMY_DEFS.map(freshChar),
+    round    : 1,
+    nxtturn  : [],
+    turnIdx  : 0,
+    btlactv  : true,
+    phase    : 'running',
+  };
+
+  document.getElementById('battle-result').classList.remove('show');
+  clearLog();
+  logLine('=== RPG BATTLE INITIATED ===', 'sep');
+
+  gs.nxtturn = buildTurnOrder();
+  logLine(`--- ROUND ${gs.round} ---`, 'rnd');
+  renderAll();
+  nextTurn();
+}
+
+function resetGame() {
+  document.getElementById('battle-result').classList.remove('show');
+  document.getElementById('action-prompt').textContent = 'Press START to begin the battle.';
+  document.getElementById('action-buttons').innerHTML =
+    '<button class="start-btn" onclick="initGame()">▶ START BATTLE</button>';
+  clearLog();
+  // Reset bars to full
+  HERO_DEFS.forEach(heroDef => {
+    const card = document.getElementById(`char-${heroDef.id}`);
+    if (!card) return;
+    card.querySelector('.hp-fill').style.width = '100%';
+    card.querySelector('.mp-fill').style.width = '100%';
+    card.querySelector('.hp-num').textContent  = `${heroDef.maxHp}/${heroDef.maxHp}`;
+    card.querySelector('.mp-num').textContent  = `${heroDef.maxMp}/${heroDef.maxMp}`;
+    card.classList.remove('dead', 'active-turn');
+  });
+  ENEMY_DEFS.forEach(enemyDef => {
+    const card = document.getElementById(`char-${enemyDef.id}`);
+    if (!card) return;
+    card.querySelector('.hp-fill').style.width = '100%';
+    card.querySelector('.hp-num').textContent  = `${enemyDef.maxHp}/${enemyDef.maxHp}`;
+    card.classList.remove('dead', 'active-turn');
+  });
+  document.getElementById('round-display').textContent = 'ROUND 1';
+}
+
+/* ── cmpspd: sort descending by speed ── */
+function buildTurnOrder() {
+  return [
+    ...gs.heroes.filter(h => h.hp > 0),
+    ...gs.enemies.filter(e => e.hp > 0),
+  ].sort((a, b) => b.spd - a.spd);
+}
+
+/* ============================================================
+   TURN ENGINE
+============================================================ */
+function nextTurn() {
+  if (!gs.btlactv) return;
+
+  const hroalv = gs.heroes.some(h => h.hp > 0);
+  const enmalv = gs.enemies.some(e => e.hp > 0);
+  if (!hroalv || !enmalv) { endBattle(hroalv); return; }
+
+  // New round if we've exhausted the turn list
+  if (gs.turnIdx >= gs.nxtturn.length) {
+    gs.round++;
+    gs.nxtturn = buildTurnOrder();
+    gs.turnIdx = 0;
+    document.getElementById('round-display').textContent = `ROUND ${gs.round}`;
+    logLine(`--- ROUND ${gs.round} ---`, 'rnd');
+    if (gs.nxtturn.length === 0) { endBattle(false); return; }
+  }
+
+  const cur = gs.nxtturn[gs.turnIdx];
+
+  // Skip dead characters
+  if (cur.hp <= 0) { gs.turnIdx++; nextTurn(); return; }
+
+  highlightActive(cur.id);
+  logLine(`[ ${cur.name}'s Turn ]`, 'turn');
+
+  if (cur.ishro) {
+    showHeroActions(cur);
+  } else {
+    hideActionPanel();
+    setTimeout(() => {
+      const alvhros = gs.heroes.filter(h => h.hp > 0);
+      if (alvhros.length > 0) {
+        const tgt = alvhros[Math.floor(Math.random() * alvhros.length)];
+        logLine(`${cur.name} attacks ${tgt.name}!`, 'enm');
+        applyDamage(cur, tgt, 15);
+      }
+      gs.turnIdx++;
+      renderAll();
+      setTimeout(nextTurn, 650);
+    }, 700);
+  }
+}
+
+/* ============================================================
+   HERO ACTIONS
+============================================================ */
+function showHeroActions(hero) {
+  const prompt = document.getElementById('action-prompt');
+  const btns   = document.getElementById('action-buttons');
+  prompt.textContent = `${hero.name}'s turn  ▸  choose action`;
+  btns.innerHTML = '';
+
+  if (hero.cls === 'war') {
+    mkBtn(btns, '⚔ Attack',  'atk',   () => pickEnemy(hero, 'attack',    25,  0));
+    mkBtn(btns, '🛡 Guard',   'grd',   () => doGuard(hero));
+  } else if (hero.cls === 'mag') {
+    mkBtn(btns, '🔥 Fireball (30mp)',   'spell', () => {
+      if (hero.mp < 30) { logLine('insuffmana — Not enough mana!', 'dmg'); doGuard(hero); return; }
+      pickEnemy(hero, 'fireball', 40, 30);
+    }, hero.mp < 30);
+    mkBtn(btns, '❄ Ice Strike (20mp)', 'spell', () => {
+      if (hero.mp < 20) { logLine('insuffmana — Not enough mana!', 'dmg'); doGuard(hero); return; }
+      pickEnemy(hero, 'icestrike', 25, 20);
+    }, hero.mp < 20);
+    mkBtn(btns, '⚔ Attack', 'atk', () => pickEnemy(hero, 'attack', 25, 0));
+    mkBtn(btns, '🛡 Guard',  'grd', () => doGuard(hero));
+  } else if (hero.cls === 'hlr') {
+    mkBtn(btns, '✨ Divine Light (25mp)', 'heal', () => {
+      if (hero.mp < 25) { logLine('insuffmana — Not enough mana!', 'dmg'); doGuard(hero); return; }
+      pickAlly(hero);
+    }, hero.mp < 25);
+    mkBtn(btns, '⚔ Attack', 'atk', () => pickEnemy(hero, 'attack', 20, 0));
+    mkBtn(btns, '🛡 Guard',  'grd', () => doGuard(hero));
+  }
+}
+
+function mkBtn(container, label, cls, handler, disabled = false) {
+  const b = document.createElement('button');
+  b.className   = `ab ${cls}`;
+  b.textContent = label;
+  b.disabled    = disabled;
+  b.onclick     = handler;
+  container.appendChild(b);
+}
+
+/* Pick an enemy target */
+function pickEnemy(hero, action, dmg, mpCost) {
+  const prompt = document.getElementById('action-prompt');
+  const btns   = document.getElementById('action-buttons');
+  prompt.innerHTML = '<span class="hint-enemy">▸ CLICK AN ENEMY TARGET ◂</span>';
+  btns.innerHTML   = '';
+  mkBtn(btns, '✕ Cancel', 'grd', () => { clearTargetable(); showHeroActions(hero); });
+
+  gs.enemies.forEach(e => {
+    if (e.hp <= 0) return;
+    const card = document.getElementById(`char-${e.id}`);
+    if (!card) return;
+    card.classList.add('targetable');
+    card.onclick = () => {
+      clearTargetable();
+      execAttack(hero, e, action, dmg, mpCost);
+    };
+  });
+}
+
+/* Pick an ally target */
+function pickAlly(hero) {
+  const prompt = document.getElementById('action-prompt');
+  const btns   = document.getElementById('action-buttons');
+  prompt.innerHTML = '<span class="hint-ally">▸ CLICK AN ALLY TO HEAL ◂</span>';
+  btns.innerHTML   = '';
+  mkBtn(btns, '✕ Cancel', 'grd', () => { clearTargetable(); showHeroActions(hero); });
+
+  gs.heroes.forEach(h => {
+    if (h.hp <= 0) return;
+    const card = document.getElementById(`char-${h.id}`);
+    if (!card) return;
+    card.classList.add('ally-sel');
+    card.onclick = () => {
+      clearTargetable();
+      applyHeal(hero, h, 40, 25);
+      advanceTurn();
+    };
+  });
+}
+
+function clearTargetable() {
+  document.querySelectorAll('.targetable, .ally-sel').forEach(el => {
+    el.classList.remove('targetable', 'ally-sel');
+    el.onclick = null;
+  });
+}
+
+/* Execute hero attack / spell */
+function execAttack(hero, target, action, dmg, mpCost) {
+  if (action === 'attack') {
+    logLine(`${hero.name} swings a broadsword at ${target.name}!`, 'spl');
+    applyDamage(hero, target, dmg);
+  } else if (action === 'fireball') {
+    hero.mp -= mpCost;
+    logLine(`${hero.name} casts Fireball on ${target.name}!`, 'spl');
+    applyDamage(hero, target, dmg);
+    renderChar(hero);
+  } else if (action === 'icestrike') {
+    hero.mp -= mpCost;
+    logLine(`${hero.name} casts IceStrike on ${target.name}!`, 'spl');
+    applyDamage(hero, target, dmg);
+    renderChar(hero);
+  }
+  advanceTurn();
+}
+
+function doGuard(hero) {
+  logLine(`${hero.name} guards.`, 'sys');
+  advanceTurn();
+}
+
+function advanceTurn() {
+  hideActionPanel();
+  gs.turnIdx++;
+  renderAll();
+  setTimeout(nextTurn, 500);
+}
+
+/* ============================================================
+   DAMAGE / HEAL
+============================================================ */
+function applyDamage(attacker, target, dmg) {
+  target.hp = Math.max(0, target.hp - dmg);
+  logLine(`${target.name} takes ${dmg} damage! (HP: ${target.hp}/${target.maxHp})`, 'dmg');
+  shakeCard(target.id);
+  floatDmg(target.id, `-${dmg}`, false);
+  renderChar(target);
+}
+
+function applyHeal(caster, target, amt, mpCost) {
+  target.hp  = Math.min(target.maxHp, target.hp + amt);
+  caster.mp  = Math.max(0, caster.mp - mpCost);
+  logLine(`${caster.name} casts Divine Light on ${target.name}!`, 'hlg');
+  logLine(`${target.name} is healed for ${amt}! (HP: ${target.hp}/${target.maxHp})`, 'hlg');
+  floatDmg(target.id, `+${amt}`, true);
+  renderChar(target);
+  renderChar(caster);
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function renderAll() {
+  gs.heroes.forEach(renderChar);
+  gs.enemies.forEach(renderChar);
+}
+
+function renderChar(ch) {
+  const card = document.getElementById(`char-${ch.id}`);
+  if (!card) return;
+  const hpPct = Math.max(0, (ch.hp / ch.maxHp) * 100);
+  const mpPct = ch.maxMp > 0 ? Math.max(0, (ch.mp / ch.maxMp) * 100) : 0;
+
+  const hpBar = card.querySelector('.hp-fill');
+  const mpBar = card.querySelector('.mp-fill');
+  const hpNum = card.querySelector('.hp-num');
+  const mpNum = card.querySelector('.mp-num');
+
+  if (hpBar) { hpBar.style.width = `${hpPct}%`; hpBar.classList.toggle('low', hpPct < 25 && ch.hp > 0); }
+  if (mpBar)  mpBar.style.width = `${mpPct}%`;
+  if (hpNum)  hpNum.textContent = `${ch.hp}/${ch.maxHp}`;
+  if (mpNum)  mpNum.textContent = `${ch.mp}/${ch.maxMp}`;
+  card.classList.toggle('dead', ch.hp <= 0);
+}
+
+function highlightActive(id) {
+  document.querySelectorAll('.cc.active-turn').forEach(c => c.classList.remove('active-turn'));
+  const card = document.getElementById(`char-${id}`);
+  if (card) card.classList.add('active-turn');
+}
+
+function hideActionPanel() {
+  clearTargetable();
+  document.getElementById('action-prompt').textContent = 'Processing…';
+  document.getElementById('action-buttons').innerHTML  = '';
+}
+
+function shakeCard(id) {
+  const c = document.getElementById(`char-${id}`);
+  if (!c) return;
+  c.classList.remove('hit');
+  c.offsetWidth;   // reflow to restart animation
+  c.classList.add('hit');
+  setTimeout(() => c.classList.remove('hit'), 400);
+}
+
+function floatDmg(id, text, isHeal) {
+  const card = document.getElementById(`char-${id}`);
+  if (!card) return;
+  const el = document.createElement('div');
+  el.className   = `dmg-float${isHeal ? ' heal' : ''}`;
+  el.textContent = text;
+  card.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+
+/* ============================================================
+   BATTLE END
+============================================================ */
+function endBattle(victory) {
+  gs.btlactv = false;
+  gs.phase   = 'over';
+  hideActionPanel();
+
+  const overlay = document.getElementById('battle-result');
+  const title   = document.getElementById('result-title');
+  const loot    = document.getElementById('result-loot');
+
+  overlay.classList.add('show');
+
+  if (victory) {
+    title.className   = 'v';
+    title.textContent = '⚔  VICTORY!  ⚔';
+    logLine('=== BATTLE CONCLUDED ===', 'sep');
+    logLine('VICTORY! The heroes have triumphed.', 'vic');
+    logLine('Loot: Staff of the Archmagus', 'loot');
+    logLine('Loot: 1500 Gold', 'loot');
+    loot.innerHTML = `
+      <p style="font-family:var(--font-pixel);font-size:8px;color:var(--accent);margin-bottom:10px">LOOT ACQUIRED</p>
+      <p>🗡&nbsp; Staff of the Archmagus</p>
+      <p>💰&nbsp; 1500 Gold</p>
+      <p style="color:var(--txt-dim);font-size:13px;margin-top:8px">
+        lootbx&lt;string&gt; + lootbx&lt;int&gt;
+      </p>`;
+  } else {
+    title.className   = 'd';
+    title.textContent = '💀  DEFEAT  💀';
+    loot.innerHTML    = `<p style="color:var(--txt-dim)">The party has fallen...</p>`;
+    logLine('=== BATTLE CONCLUDED ===', 'sep');
+    logLine('DEFEAT! The party has fallen.', 'def');
+  }
+}
+
+/* ============================================================
+   LOG
+============================================================ */
+function logLine(text, cls = '') {
+  const log = document.getElementById('battle-log');
+  if (!log) return;
+  const div = document.createElement('div');
+  div.className   = `ll ${cls}`;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() {
+  const log = document.getElementById('battle-log');
+  if (log) log.innerHTML = '';
+}
+</script>
+</body>
+</html>
