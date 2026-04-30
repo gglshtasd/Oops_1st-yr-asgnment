@@ -1311,153 +1311,147 @@
       </div>
       <div class="cv-body">
 
-        <!-- Tab: main.cpp (full file, no comments) -->
+        <!-- Tab: main.cpp (simplified) -->
         <div id="tab-main" class="cv-pane active">
 <pre><code class="language-cpp">#include &lt;iostream&gt;
 #include &lt;string&gt;
 #include &lt;vector&gt;
-#include &lt;map&gt;
-#include &lt;exception&gt;
-
 using namespace std;
 
-class insuffmana : public exception {
-public:
-    const char* what() const throw() { return "Not enough mana!"; }
-};
-
-template &lt;typename T&gt;
-class lootbx {
-    T itm;
-public:
-    lootbx(T i) : itm(i) {}
-    T open() { return itm; }
-};
-
-class chrctr {
+class Character {
 protected:
-    string nm; int hp, mxhp, mn, spd; bool ishro;
+    string name;
+    int hp, maxHp, mana, speed;
+    bool isHero;
 public:
-    chrctr(string n, int h, int m, int s, bool f)
-        : nm(n), hp(h), mxhp(h), mn(m), spd(s), ishro(f) {}
-    virtual ~chrctr() {}
-    virtual void act(chrctr* tgt) = 0;
-    int    getspd()   const { return spd; }
-    string getnm()    const { return nm; }
-    int    gethp()    const { return hp; }
-    int    getmn()    const { return mn; }
-    bool   getishro() const { return ishro; }
-    bool   isalv()    const { return hp &gt; 0; }
-    friend ostream&amp; operator&lt;&lt;(ostream&amp; os, const chrctr&amp; c) {
-        return os &lt;&lt; c.nm &lt;&lt; " [HP:" &lt;&lt; c.hp &lt;&lt; "/" &lt;&lt; c.mxhp &lt;&lt; " MP:" &lt;&lt; c.mn &lt;&lt; "]";
-    }
-    void tkdmg(int d) { hp -= d; if (hp &lt; 0) hp = 0; }
-    void hl(int a)    { hp += a; if (hp &gt; mxhp) hp = mxhp; }
-    void decmn(int a) { mn -= a; if (mn &lt; 0) mn = 0; }
+    Character(string n, int h, int m, int s, bool hero)
+        : name(n), hp(h), maxHp(h), mana(m), speed(s), isHero(hero) {}
+    virtual ~Character() {}
+    virtual void act(Character* target) = 0;
+
+    string getName()   const { return name; }
+    int    getHp()     const { return hp; }
+    int    getMana()   const { return mana; }
+    int    getSpeed()  const { return speed; }
+    bool   getIsHero() const { return isHero; }
+    bool   isAlive()   const { return hp &gt; 0; }
+
+    void takeDamage(int dmg) { hp -= dmg; if (hp &lt; 0) hp = 0; }
+    void heal(int amt)       { hp += amt; if (hp &gt; maxHp) hp = maxHp; }
+    void useMana(int amt)    { mana -= amt; if (mana &lt; 0) mana = 0; }
 };
 
-class war : public chrctr {
+class Warrior : public Character {
 public:
-    war(string n) : chrctr(n, 150, 20, 10, true) {}
-    void act(chrctr* tgt) override { tgt-&gt;tkdmg(25); }
-    void operator+(int a) { hl(a); }
-};
-
-class mag : public chrctr {
-    map&lt;string, int&gt; splbk;
-public:
-    mag(string n) : chrctr(n, 80, 100, 15, true) {
-        splbk["Fireball"] = 30;
-        splbk["IceStrike"] = 20;
-    }
-    void act(chrctr* tgt) override { cstspl("Fireball", tgt); }
-    void cstspl(string s, chrctr* tgt) {
-        if (splbk.find(s) == splbk.end()) return;
-        if (mn &lt; splbk[s]) throw insuffmana();
-        decmn(splbk[s]);
-        tgt-&gt;tkdmg(s == "Fireball" ? 40 : 25);
+    Warrior(string n) : Character(n, 150, 20, 10, true) {}
+    void act(Character* target) override {
+        cout &lt;&lt; name &lt;&lt; " attacks " &lt;&lt; target-&gt;getName()
+             &lt;&lt; " for 25 damage!" &lt;&lt; endl;
+        target-&gt;takeDamage(25);
     }
 };
 
-class hlr : public chrctr {
+class Mage : public Character {
 public:
-    hlr(string n) : chrctr(n, 90, 120, 14, true) {}
-    void act(chrctr* tgt) override {
-        if (mn &lt; 25) throw insuffmana();
-        decmn(25); tgt-&gt;hl(40);
+    Mage(string n) : Character(n, 80, 100, 15, true) {}
+    void castFireball(Character* target) {
+        if (mana &lt; 30) { cout &lt;&lt; name &lt;&lt; " has no mana for Fireball!" &lt;&lt; endl; return; }
+        useMana(30);
+        cout &lt;&lt; name &lt;&lt; " casts Fireball on " &lt;&lt; target-&gt;getName()
+             &lt;&lt; " for 40 damage!" &lt;&lt; endl;
+        target-&gt;takeDamage(40);
     }
+    void castIceStrike(Character* target) {
+        if (mana &lt; 20) { cout &lt;&lt; name &lt;&lt; " has no mana for Ice Strike!" &lt;&lt; endl; return; }
+        useMana(20);
+        cout &lt;&lt; name &lt;&lt; " casts Ice Strike on " &lt;&lt; target-&gt;getName()
+             &lt;&lt; " for 25 damage!" &lt;&lt; endl;
+        target-&gt;takeDamage(25);
+    }
+    void act(Character* target) override { castFireball(target); }
 };
 
-class enmy : public chrctr {
+class Healer : public Character {
 public:
-    enmy(string n, int h, int m, int s) : chrctr(n, h, m, s, false) {}
-    enmy(const enmy&amp; e) : chrctr(e.nm + " (Clone)", e.hp, e.mn, e.spd, false) {}
-    void act(chrctr* tgt) override { tgt-&gt;tkdmg(15); }
+    Healer(string n) : Character(n, 90, 120, 14, true) {}
+    void healAlly(Character* ally) {
+        if (mana &lt; 25) { cout &lt;&lt; name &lt;&lt; " has no mana to heal!" &lt;&lt; endl; return; }
+        useMana(25);
+        cout &lt;&lt; name &lt;&lt; " heals " &lt;&lt; ally-&gt;getName() &lt;&lt; " for 40 HP!" &lt;&lt; endl;
+        ally-&gt;heal(40);
+    }
+    void act(Character* target) override { healAlly(target); }
+};
+
+class Enemy : public Character {
+public:
+    Enemy(string n, int h, int s) : Character(n, h, 0, s, false) {}
+    Enemy(const Enemy&amp; e)
+        : Character(e.name + " (Clone)", e.hp, e.mana, e.speed, false) {}
+    void act(Character* target) override {
+        cout &lt;&lt; name &lt;&lt; " attacks " &lt;&lt; target-&gt;getName()
+             &lt;&lt; " for 15 damage!" &lt;&lt; endl;
+        target-&gt;takeDamage(15);
+    }
 };
 
 int main() {
-    war p1("Arthur"); mag p2("Merlin"); hlr p3("Elara");
-    enmy e1("Goblin Scout", 60, 0, 12);
-    enmy e2("Orc Brute", 120, 0, 8);
-    enmy e3 = e1;
+    Warrior arthur("Arthur");
+    Mage    merlin("Merlin");
+    Healer  elara("Elara");
+    Enemy   goblin("Goblin Scout", 60, 12);
+    Enemy   orc("Orc Brute", 120, 8);
+    Enemy   goblinClone = goblin;
 
-    vector&lt;chrctr*&gt; hros = {&amp;p1, &amp;p2, &amp;p3};
-    vector&lt;chrctr*&gt; enms = {&amp;e1, &amp;e2, &amp;e3};
+    vector&lt;Character*&gt; heroes  = { &amp;arthur, &amp;merlin, &amp;elara };
+    vector&lt;Character*&gt; enemies = { &amp;goblin, &amp;orc, &amp;goblinClone };
 
-    int rseed = 0;
-    bool btlactv = true; int rnd = 1;
+    cout &lt;&lt; "=== RPG BATTLE INITIATED ===" &lt;&lt; endl;
+    int round = 1, seed = 0;
+    bool battleActive = true;
 
-    while (btlactv) {
-        vector&lt;chrctr*&gt; nxtturn;
-        for (auto h : hros) if (h-&gt;isalv()) nxtturn.push_back(h);
-        for (auto e : enms) if (e-&gt;isalv()) nxtturn.push_back(e);
-        if (nxtturn.empty()) break;
+    while (battleActive) {
+        vector&lt;Character*&gt; turnOrder;
+        for (auto h : heroes)  if (h-&gt;isAlive()) turnOrder.push_back(h);
+        for (auto e : enemies) if (e-&gt;isAlive()) turnOrder.push_back(e);
+        if (turnOrder.empty()) break;
 
-        for (int i = 0; i &lt; (int)nxtturn.size()-1; i++)
-            for (int j = i+1; j &lt; (int)nxtturn.size(); j++)
-                if (nxtturn[i]-&gt;getspd() &lt; nxtturn[j]-&gt;getspd())
-                    swap(nxtturn[i], nxtturn[j]);
+        for (int i = 0; i &lt; (int)turnOrder.size()-1; i++)
+            for (int j = i+1; j &lt; (int)turnOrder.size(); j++)
+                if (turnOrder[i]-&gt;getSpeed() &lt; turnOrder[j]-&gt;getSpeed())
+                    swap(turnOrder[i], turnOrder[j]);
 
-        for (auto curturn : nxtturn) {
-            if (!curturn-&gt;isalv()) continue;
-            bool hroalv = false, enmalv = false;
-            for (auto h : hros) if (h-&gt;isalv()) hroalv = true;
-            for (auto e : enms) if (e-&gt;isalv()) enmalv = true;
-            if (!hroalv || !enmalv) { btlactv = false; break; }
+        cout &lt;&lt; "--- ROUND " &lt;&lt; round &lt;&lt; " ---" &lt;&lt; endl;
 
-            if (curturn-&gt;getishro()) {
-                vector&lt;chrctr*&gt; alveanime, alvhros;
-                for (auto e : enms) if (e-&gt;isalv()) alveanime.push_back(e);
-                for (auto h : hros) if (h-&gt;isalv()) alvhros.push_back(h);
-                int chc; cin &gt;&gt; chc;
-                if (chc == 1) {
-                    int t; cin &gt;&gt; t;
-                    curturn-&gt;act(alveanime[t-1]);
-                } else if (chc == 3 &amp;&amp; dynamic_cast&lt;mag*&gt;(curturn)) {
-                    string s; int t; cin &gt;&gt; s &gt;&gt; t;
-                    try { dynamic_cast&lt;mag*&gt;(curturn)-&gt;cstspl(s, alveanime[t-1]); }
-                    catch (insuffmana&amp; ex) { cout &lt;&lt; ex.what(); }
-                } else if (chc == 3 &amp;&amp; dynamic_cast&lt;hlr*&gt;(curturn)) {
-                    int t; cin &gt;&gt; t;
-                    try { curturn-&gt;act(alvhros[t-1]); }
-                    catch (insuffmana&amp; ex) { cout &lt;&lt; ex.what(); }
-                }
+        for (auto cur : turnOrder) {
+            if (!cur-&gt;isAlive()) continue;
+            bool heroAlive = false, enemyAlive = false;
+            for (auto h : heroes)  if (h-&gt;isAlive()) heroAlive  = true;
+            for (auto e : enemies) if (e-&gt;isAlive()) enemyAlive = true;
+            if (!heroAlive || !enemyAlive) { battleActive = false; break; }
+
+            if (cur-&gt;getIsHero()) {
+                vector&lt;Character*&gt; aliveEnemies;
+                for (auto e : enemies) if (e-&gt;isAlive()) aliveEnemies.push_back(e);
+                cur-&gt;act(aliveEnemies[0]);
             } else {
-                vector&lt;chrctr*&gt; alvhros;
-                for (auto h : hros) if (h-&gt;isalv()) alvhros.push_back(h);
-                int rndtgt = (rseed++) % (int)alvhros.size();
-                curturn-&gt;act(alvhros[rndtgt]);
+                vector&lt;Character*&gt; aliveHeroes;
+                for (auto h : heroes) if (h-&gt;isAlive()) aliveHeroes.push_back(h);
+                int tgt = (seed++) % (int)aliveHeroes.size();
+                cur-&gt;act(aliveHeroes[tgt]);
             }
         }
-        rnd++;
+        round++;
     }
 
-    bool vic = false;
-    for (auto h : hros) if (h-&gt;isalv()) vic = true;
-    if (vic) {
-        lootbx&lt;string&gt; epcloot("Staff of the Archmagus");
-        lootbx&lt;int&gt;    gldloot(1500);
-        cout &lt;&lt; epcloot.open() &lt;&lt; "\n" &lt;&lt; gldloot.open() &lt;&lt; " Gold\n";
+    bool victory = false;
+    for (auto h : heroes) if (h-&gt;isAlive()) victory = true;
+    if (victory) {
+        cout &lt;&lt; "=== VICTORY! ===" &lt;&lt; endl;
+        cout &lt;&lt; "Loot: Staff of the Archmagus" &lt;&lt; endl;
+        cout &lt;&lt; "Loot: 1500 Gold" &lt;&lt; endl;
+    } else {
+        cout &lt;&lt; "=== DEFEAT ===" &lt;&lt; endl;
     }
     return 0;
 }</code></pre>
@@ -1465,104 +1459,121 @@ int main() {
 
         <!-- Tab: Classes & Inheritance -->
         <div id="tab-classes" class="cv-pane">
-<pre><code class="language-cpp">class chrctr {
+<pre><code class="language-cpp">// Abstract base class — cannot be instantiated directly
+class Character {
 protected:
-    string nm; int hp, mxhp, mn, spd; bool ishro;
+    string name;
+    int hp, maxHp, mana, speed;
+    bool isHero;
 public:
-    chrctr(string n, int h, int m, int s, bool f)
-        : nm(n), hp(h), mxhp(h), mn(m), spd(s), ishro(f) {}
-    virtual ~chrctr() {}
-    virtual void act(chrctr* tgt) = 0;
-    bool isalv()  const { return hp &gt; 0; }
-    void tkdmg(int d) { hp -= d; if (hp &lt; 0) hp = 0; }
-    void hl(int a)    { hp += a; if (hp &gt; mxhp) hp = mxhp; }
-    void decmn(int a) { mn -= a; if (mn &lt; 0) mn = 0; }
-    int getspd() const; string getnm() const; int gethp() const;
-    int getmn()  const; bool getishro() const;
+    Character(string n, int h, int m, int s, bool hero)
+        : name(n), hp(h), maxHp(h), mana(m), speed(s), isHero(hero) {}
+    virtual ~Character() {}
+    virtual void act(Character* target) = 0;  // pure virtual
+
+    bool   isAlive()   const { return hp &gt; 0; }
+    string getName()   const { return name; }
+    int    getHp()     const { return hp; }
+    int    getMana()   const { return mana; }
+    int    getSpeed()  const { return speed; }
+    bool   getIsHero() const { return isHero; }
+
+    void takeDamage(int dmg) { hp -= dmg; if (hp &lt; 0) hp = 0; }
+    void heal(int amt)       { hp += amt; if (hp &gt; maxHp) hp = maxHp; }
+    void useMana(int amt)    { mana -= amt; if (mana &lt; 0) mana = 0; }
 };
 
-class war : public chrctr {
+class Warrior : public Character {
 public:
-    war(string n) : chrctr(n, 150, 20, 10, true) {}
-    void act(chrctr* tgt) override { tgt-&gt;tkdmg(25); }
-    void operator+(int a) { hl(a); }
-};
-
-class mag : public chrctr {
-    map&lt;string, int&gt; splbk;
-public:
-    mag(string n) : chrctr(n, 80, 100, 15, true) {
-        splbk["Fireball"] = 30; splbk["IceStrike"] = 20;
-    }
-    void act(chrctr* tgt) override { cstspl("Fireball", tgt); }
-    void cstspl(string s, chrctr* tgt) {
-        if (mn &lt; splbk[s]) throw insuffmana();
-        decmn(splbk[s]);
-        tgt-&gt;tkdmg(s == "Fireball" ? 40 : 25);
+    Warrior(string n) : Character(n, 150, 20, 10, true) {}
+    void act(Character* target) override {
+        cout &lt;&lt; name &lt;&lt; " attacks " &lt;&lt; target-&gt;getName()
+             &lt;&lt; " for 25 damage!" &lt;&lt; endl;
+        target-&gt;takeDamage(25);
     }
 };
 
-class hlr : public chrctr {
+class Mage : public Character {
 public:
-    hlr(string n) : chrctr(n, 90, 120, 14, true) {}
-    void act(chrctr* tgt) override {
-        if (mn &lt; 25) throw insuffmana();
-        decmn(25); tgt-&gt;hl(40);
+    Mage(string n) : Character(n, 80, 100, 15, true) {}
+    void castFireball(Character* target) {
+        if (mana &lt; 30) { cout &lt;&lt; name &lt;&lt; " has no mana for Fireball!" &lt;&lt; endl; return; }
+        useMana(30);
+        cout &lt;&lt; name &lt;&lt; " casts Fireball on " &lt;&lt; target-&gt;getName()
+             &lt;&lt; " for 40 damage!" &lt;&lt; endl;
+        target-&gt;takeDamage(40);
     }
+    void castIceStrike(Character* target) {
+        if (mana &lt; 20) { cout &lt;&lt; name &lt;&lt; " has no mana for Ice Strike!" &lt;&lt; endl; return; }
+        useMana(20);
+        cout &lt;&lt; name &lt;&lt; " casts Ice Strike on " &lt;&lt; target-&gt;getName()
+             &lt;&lt; " for 25 damage!" &lt;&lt; endl;
+        target-&gt;takeDamage(25);
+    }
+    void act(Character* target) override { castFireball(target); }
 };
 
-class enmy : public chrctr {
+class Healer : public Character {
 public:
-    enmy(string n, int h, int m, int s) : chrctr(n, h, m, s, false) {}
-    enmy(const enmy&amp; e) : chrctr(e.nm + " (Clone)", e.hp, e.mn, e.spd, false) {}
-    void act(chrctr* tgt) override { tgt-&gt;tkdmg(15); }
+    Healer(string n) : Character(n, 90, 120, 14, true) {}
+    void healAlly(Character* ally) {
+        if (mana &lt; 25) { cout &lt;&lt; name &lt;&lt; " has no mana to heal!" &lt;&lt; endl; return; }
+        useMana(25);
+        cout &lt;&lt; name &lt;&lt; " heals " &lt;&lt; ally-&gt;getName() &lt;&lt; " for 40 HP!" &lt;&lt; endl;
+        ally-&gt;heal(40);
+    }
+    void act(Character* target) override { healAlly(target); }
+};
+
+class Enemy : public Character {
+public:
+    Enemy(string n, int h, int s) : Character(n, h, 0, s, false) {}
+    // Copy constructor — creates a named Clone
+    Enemy(const Enemy&amp; e)
+        : Character(e.name + " (Clone)", e.hp, e.mana, e.speed, false) {}
+    void act(Character* target) override {
+        cout &lt;&lt; name &lt;&lt; " attacks " &lt;&lt; target-&gt;getName()
+             &lt;&lt; " for 15 damage!" &lt;&lt; endl;
+        target-&gt;takeDamage(15);
+    }
 };</code></pre>
         </div>
 
         <!-- Tab: Polymorphism -->
         <div id="tab-poly" class="cv-pane">
-<pre><code class="language-cpp">class chrctr {
+<pre><code class="language-cpp">// ── 1. RUNTIME POLYMORPHISM ──────────────────────────────────
+// Character has a pure virtual function — every subclass MUST override it.
+class Character {
 public:
-    virtual void act(chrctr* tgt) = 0;
-    virtual ~chrctr() {}
+    virtual void act(Character* target) = 0;  // pure virtual
+    virtual ~Character() {}
 };
 
-void war::act(chrctr* tgt) override  { tgt-&gt;tkdmg(25); }
-void mag::act(chrctr* tgt) override  { cstspl("Fireball", tgt); }
-void hlr::act(chrctr* tgt) override  {
-    if (mn &lt; 25) throw insuffmana();
-    decmn(25); tgt-&gt;hl(40);
-}
-void enmy::act(chrctr* tgt) override { tgt-&gt;tkdmg(15); }
+// Each class provides its own version of act():
+void Warrior::act(Character* target) override { target-&gt;takeDamage(25); }
+void Mage::act(Character* target)    override { castFireball(target);    }
+void Healer::act(Character* target)  override { healAlly(target);        }
+void Enemy::act(Character* target)   override { target-&gt;takeDamage(15); }
 
-for (auto curturn : nxtturn) {
-    curturn-&gt;act(target);
-}
-
-if (dynamic_cast&lt;mag*&gt;(curturn)) {
-    dynamic_cast&lt;mag*&gt;(curturn)-&gt;cstspl(s, alveanime[t-1]);
+// One loop, four different behaviours — same call, different result:
+for (auto cur : turnOrder) {
+    cur-&gt;act(target);   // calls Warrior, Mage, Healer, or Enemy version
 }
 
-void war::operator+(int a) { hl(a); }
+// ── 2. COPY CONSTRUCTOR (Enemy clone) ────────────────────────
+// Enemy has a copy constructor that creates a renamed Clone:
+Enemy(const Enemy&amp; e)
+    : Character(e.name + " (Clone)", e.hp, e.mana, e.speed, false) {}
 
-friend ostream&amp; operator&lt;&lt;(ostream&amp; os, const chrctr&amp; c) {
-    return os &lt;&lt; c.nm &lt;&lt; " [HP:" &lt;&lt; c.hp &lt;&lt; "/" &lt;&lt; c.mxhp &lt;&lt; " MP:" &lt;&lt; c.mn &lt;&lt; "]";
-}
+Enemy goblin("Goblin Scout", 60, 12);
+Enemy goblinClone = goblin;  // calls copy constructor → "Goblin Scout (Clone)"
 
-template &lt;typename T&gt;
-class lootbx {
-    T itm;
-public:
-    lootbx(T i) : itm(i) {}
-    T open() { return itm; }
-};
-
-class insuffmana : public exception {
-public:
-    const char* what() const throw() { return "Not enough mana!"; }
-};
-if (mn &lt; splbk[s]) throw insuffmana();
-try { cstspl(s, tgt); } catch (insuffmana&amp; ex) { cout &lt;&lt; ex.what(); }</code></pre>
+// ── 3. ABSTRACTION ───────────────────────────────────────────
+// Character* can point to any derived type.
+// Callers only need to know about act() — they don't care HOW it works.
+Character* hero = new Warrior("Arthur");
+hero-&gt;act(enemy);   // dispatches to Warrior::act at runtime
+delete hero;</code></pre>
         </div>
 
       </div><!-- /cv-body -->
@@ -1588,7 +1599,7 @@ try { cstspl(s, tgt); } catch (insuffmana&amp; ex) { cout &lt;&lt; ex.what(); }<
       <span class="oop-icon">🔒</span>
       <h3>ENCAPSULATION</h3>
       <p>
-        The <code>chrctr</code> class hides its data (<code>nm</code>, <code>hp</code>, <code>mxhp</code>, <code>mn</code>, <code>spd</code>) behind <code>protected</code> visibility. External code can only read stats through controlled getters like <code>gethp()</code>, <code>getmn()</code>, and <code>getspd()</code>, while mutations like <code>tkdmg()</code>, <code>hl()</code>, and <code>decmn()</code> enforce invariants (HP never goes negative, never exceeds <code>mxhp</code>). The <code>mag</code> class further encapsulates its <code>splbk</code> spell book as a <code>private</code> member, exposed only through <code>cstspl()</code> and <code>shwspls()</code>.
+        The <code>Character</code> class hides its data (<code>name</code>, <code>hp</code>, <code>maxHp</code>, <code>mana</code>, <code>speed</code>) behind <code>protected</code> visibility. External code can only read stats through controlled getters like <code>getHp()</code>, <code>getMana()</code>, and <code>getSpeed()</code>, while mutations like <code>takeDamage()</code>, <code>heal()</code>, and <code>useMana()</code> enforce safe limits — HP never goes negative, never exceeds <code>maxHp</code>, mana never drops below zero. This keeps the object's internal state consistent at all times.
       </p>
     </div>
 
@@ -1597,7 +1608,7 @@ try { cstspl(s, tgt); } catch (insuffmana&amp; ex) { cout &lt;&lt; ex.what(); }<
       <span class="oop-icon">🌳</span>
       <h3>INHERITANCE</h3>
       <p>
-        All character types derive from the single abstract base <code>chrctr</code>. Hero classes <code>war</code>, <code>mag</code>, and <code>hlr</code> inherit shared logic (stats, <code>tkdmg</code>, <code>hl</code>, <code>decmn</code>) and provide their own stats via constructor chaining. <code>enmy</code> also inherits <code>chrctr</code> and adds a copy constructor that creates a named <em>Clone</em> — mirroring the <code>enmy e3 = e1;</code> line in <code>main()</code>. This eliminates code duplication across all five concrete types.
+        All character types derive from the single abstract base <code>Character</code>. Hero classes <code>Warrior</code>, <code>Mage</code>, and <code>Healer</code> inherit shared logic (<code>takeDamage</code>, <code>heal</code>, <code>useMana</code>) and set their own stats via constructor chaining. <code>Enemy</code> also inherits <code>Character</code> and adds a copy constructor that creates a named <em>Clone</em> — shown by <code>Enemy goblinClone = goblin</code> in <code>main()</code>. This eliminates code duplication across all four concrete types.
       </p>
     </div>
 
@@ -1606,16 +1617,16 @@ try { cstspl(s, tgt); } catch (insuffmana&amp; ex) { cout &lt;&lt; ex.what(); }<
       <span class="oop-icon">⚡</span>
       <h3>POLYMORPHISM</h3>
       <p>
-        The pure-virtual <code>act(chrctr*)</code> in <code>chrctr</code> enables runtime dispatch: the same <code>curturn-&gt;act(target)</code> call fires a warrior's broadsword swing, a mage's fireball, a healer's divine light, or an enemy attack — depending on the object's true type. <code>dynamic_cast</code> is used to query whether <code>curturn</code> is a <code>mag*</code> or <code>hlr*</code> at runtime to unlock class-specific menus. Operator overloading gives <code>war</code> a <code>+</code> operator for healing, and <code>chrctr</code> overloads <code>&lt;&lt;</code> for pretty-printing.
+        The pure-virtual <code>act(Character*)</code> in <code>Character</code> enables runtime dispatch: the same <code>cur-&gt;act(target)</code> call fires a warrior's sword strike, a mage's fireball, a healer's divine light, or an enemy's attack — depending on the object's true type. A <code>vector&lt;Character*&gt;</code> holds all four types at once, and the loop treats them identically. The compiler figures out which <code>act()</code> to call at runtime — this is polymorphism in action.
       </p>
     </div>
 
     <div class="oop-card" style="--card-line:#66bb6a">
       <span class="oop-num">04</span>
-      <span class="oop-icon">📦</span>
-      <h3>GENERIC TEMPLATES &amp; EXCEPTIONS</h3>
+      <span class="oop-icon">🎯</span>
+      <h3>ABSTRACTION</h3>
       <p>
-        The <code>lootbx&lt;T&gt;</code> template class is type-agnostic: it stores a <code>string</code> weapon name or an <code>int</code> gold amount with the same interface. The custom exception <code>insuffmana</code> extends <code>std::exception</code> and is thrown by <code>mag::cstspl()</code> and <code>hlr::act()</code> whenever MP falls short of a spell's cost — caught with a <code>try/catch</code> block in <code>main()</code> to waste the turn gracefully instead of crashing.
+        <code>Character</code> is an <em>abstract class</em> — it cannot be created directly (<code>Character c(...)</code> would not compile). The pure virtual <code>act()</code> defines <em>what</em> every character must do without saying <em>how</em>. Each subclass fills in the details. The rest of the code (the battle loop) works entirely through <code>Character*</code> pointers and never needs to know the specifics of any subclass. The <code>Enemy</code> copy constructor (<code>Enemy goblinClone = goblin</code>) also shows how classes control how their objects are copied.
       </p>
     </div>
 
@@ -1637,57 +1648,54 @@ try { cstspl(s, tgt); } catch (insuffmana&amp; ex) { cout &lt;&lt; ex.what(); }<
     <div class="diag-card">
       <div class="diag-hd">
         <h3>CLASS DIAGRAM</h3>
-        <p>Inheritance hierarchy from chrctr base</p>
+        <p>Inheritance hierarchy from Character base</p>
       </div>
       <div class="diag-body">
         <div class="mermaid">
 classDiagram
-    class chrctr {
-        #string nm
+    class Character {
+        &lt;&lt;abstract&gt;&gt;
+        #string name
         #int hp
-        #int mxhp
-        #int mn
-        #int spd
-        #bool ishro
-        +act(chrctr* tgt)*
-        +tkdmg(int dmg)
-        +hl(int amt)
-        +decmn(int amt)
-        +isalv() bool
-        +gethp() int
-        +getmn() int
-        +getspd() int
-        +getishro() bool
+        #int maxHp
+        #int mana
+        #int speed
+        #bool isHero
+        +act(Character* target)*
+        +takeDamage(int dmg)
+        +heal(int amt)
+        +useMana(int amt)
+        +isAlive() bool
+        +getName() string
+        +getHp() int
+        +getMana() int
+        +getSpeed() int
+        +getIsHero() bool
     }
-    class war {
-        +act(chrctr* tgt)
-        +operator+(int)
+    class Warrior {
+        +Warrior(string name)
+        +act(Character* target)
     }
-    class mag {
-        -map splbk
-        +act(chrctr* tgt)
-        +cstspl(string, chrctr*)
-        +shwspls()
+    class Mage {
+        +Mage(string name)
+        +act(Character* target)
+        +castFireball(Character* target)
+        +castIceStrike(Character* target)
     }
-    class hlr {
-        +act(chrctr* tgt)
+    class Healer {
+        +Healer(string name)
+        +act(Character* target)
+        +healAlly(Character* ally)
     }
-    class enmy {
-        +act(chrctr* tgt)
-        +enmy(enmy copy)
+    class Enemy {
+        +Enemy(string n, int h, int s)
+        +Enemy(Enemy copy)
+        +act(Character* target)
     }
-    class lootbx~T~ {
-        -T itm
-        +open() T
-    }
-    class insuffmana {
-        +what() char*
-    }
-    chrctr &lt;|-- war
-    chrctr &lt;|-- mag
-    chrctr &lt;|-- hlr
-    chrctr &lt;|-- enmy
-    exception &lt;|-- insuffmana
+    Character &lt;|-- Warrior
+    Character &lt;|-- Mage
+    Character &lt;|-- Healer
+    Character &lt;|-- Enemy
         </div>
       </div>
     </div>
@@ -1701,32 +1709,32 @@ classDiagram
         <div class="mermaid">
 sequenceDiagram
     participant P as Player
-    participant H as Hero (chrctr*)
-    participant E as Enemy (chrctr*)
+    participant H as Hero (Character*)
+    participant E as Enemy (Character*)
     participant G as Game Loop
 
-    G->>H: Your turn (getishro() == true)
-    P->>H: Choose action (Attack / Spell / Heal)
-    alt Attack
+    G->>H: Your turn (getIsHero() == true)
+    P->>H: Choose action
+    alt Attack (Warrior)
         H->>E: act(enemy*)
-        E-->>H: tkdmg(25)
+        E-->>H: takeDamage(25)
         Note over E: HP decreases
-    else Cast Spell (mag)
-        H->>H: cstspl("Fireball", enemy*)
-        H->>H: decmn(30)
-        H->>E: tkdmg(40)
+    else Cast Fireball (Mage)
+        H->>H: castFireball(enemy*)
+        H->>H: useMana(30)
+        H->>E: takeDamage(40)
         Note over E: Fire damage applied
-    else Heal (hlr)
-        H->>H: act(ally*)
-        H->>H: decmn(25)
-        H-->>H: hl(40)
+    else Heal (Healer)
+        H->>H: healAlly(ally*)
+        H->>H: useMana(25)
+        H-->>H: heal(40)
         Note over H: Ally HP restored
     end
-    G-->>G: Advance nxtturn index
-    G->>E: Enemy turn (getishro() == false)
+    G-->>G: Advance turn index
+    G->>E: Enemy turn (getIsHero() == false)
     E->>H: act(random hero*)
-    H-->>E: tkdmg(15)
-    G-->>G: Check hroalv &amp;&amp; enmalv
+    H-->>E: takeDamage(15)
+    G-->>G: Check heroAlive AND enemyAlive
         </div>
       </div>
     </div>
@@ -1734,44 +1742,48 @@ sequenceDiagram
     <div class="diag-card">
       <div class="diag-hd">
         <h3>GAME LOOP FLOWCHART</h3>
-        <p>Main btlactv loop with nxtturn ordering</p>
+        <p>Main battleActive loop with turnOrder sorting</p>
       </div>
       <div class="diag-body">
         <div class="mermaid">
 flowchart TD
-    A([START]) --> B[Init heroes war mag hlr\nInit enms enmy x3]
-    B --> C{btlactv == true?}
+    A([START]) --> B[Init heroes: Warrior, Mage, Healer\nInit enemies: Enemy x3]
+    B --> C{battleActive?}
     C -->|No| Z([END])
-    C -->|Yes| D[Build nxtturn\nsort by cmpspd]
-    D --> E{nxtturn empty?}
+    C -->|Yes| D[Build turnOrder\nsorted by speed]
+    D --> E{turnOrder empty?}
     E -->|Yes| Z
-    E -->|No| F[Pop curturn]
-    F --> G{curturn isalv?}
+    E -->|No| F[Get current character]
+    F --> G{isAlive?}
     G -->|No| F
-    G -->|Yes| H{curturn getishro?}
+    G -->|Yes| H{getIsHero?}
     H -->|Hero| I[Show action menu\nPlayer chooses]
     I --> J{Action?}
-    J -->|Attack| K[act on alveanime target\ntkdmg 25]
-    J -->|Spell| L{mn sufficient?\ninsufficmana check}
-    L -->|Yes| M[cstspl — tkdmg 40 or 25\ndecmn cost]
-    L -->|No| N[Throw insuffmana\nTurn wasted]
-    J -->|Heal| O{mn >= 25?}
-    O -->|Yes| P[act on ally\nhl 40 decmn 25]
+    J -->|Attack| K[act on first alive enemy\ntakeDamage 25]
+    J -->|Fireball| L{mana >= 30?}
+    L -->|Yes| M[castFireball\ntakeDamage 40, useMana 30]
+    L -->|No| N[No mana!\ncout message, skip]
+    J -->|Ice Strike| O{mana >= 20?}
+    O -->|Yes| P2[castIceStrike\ntakeDamage 25, useMana 20]
     O -->|No| N
-    J -->|Guard| Q[Skip turn]
-    H -->|Enemy| R[Random alvhros target\nact — tkdmg 15]
-    K --> S{hroalv AND enmalv?}
-    M --> S
-    P --> S
-    R --> S
-    Q --> S
-    N --> S
-    S -->|No| T{Heroes alive?}
-    T -->|Yes| U[VICTORY\nlootbx open]
-    T -->|No| V[DEFEAT]
-    U --> Z
-    V --> Z
-    S -->|Yes| F
+    J -->|Heal| Q{mana >= 25?}
+    Q -->|Yes| R[healAlly\nheal 40, useMana 25]
+    Q -->|No| N
+    J -->|Guard| S2[Skip turn]
+    H -->|Enemy| T[Random alive hero target\nact — takeDamage 15]
+    K --> U{heroAlive AND enemyAlive?}
+    M --> U
+    P2 --> U
+    R --> U
+    T --> U
+    N --> U
+    S2 --> U
+    U -->|No| V{Heroes alive?}
+    V -->|Yes| W[VICTORY\ncout loot items]
+    V -->|No| X[DEFEAT]
+    W --> Z
+    X --> Z
+    U -->|Yes| F
         </div>
       </div>
     </div>
@@ -1790,9 +1802,9 @@ flowchart TD
       <p>
         A Turn-Based RPG Battle Simulator built as the final project for the
         Object-Oriented Design &amp; Programming course. Designed in C++ with
-        full OOP architecture — polymorphism, inheritance, templates, and
-        custom exceptions — and visualised here as an interactive web
-        portfolio using vanilla JS, CSS glassmorphism, and Mermaid.js UML.
+        full OOP architecture — encapsulation, inheritance, polymorphism,
+        and abstraction — and visualised here as an interactive web
+        portfolio using vanilla JS, CSS, and Mermaid.js UML.
       </p>
     </div>
 
@@ -2054,7 +2066,7 @@ function initGame() {
 
   gs.nxtturn = buildTurnOrder();
   logLine(`--- ROUND ${gs.round} ---`, 'rnd');
-  termLog('cout << "--- ROUND ' + gs.round + ' ---";');
+  termLog('--- ROUND ' + gs.round + ' ---');
   renderAll();
   nextTurn();
 }
@@ -2111,7 +2123,7 @@ function nextTurn() {
     gs.turnIdx = 0;
     document.getElementById('round-display').textContent = `ROUND ${gs.round}`;
     logLine(`--- ROUND ${gs.round} ---`, 'rnd');
-    termLog('cout << "--- ROUND ' + gs.round + ' ---";');
+    termLog('--- ROUND ' + gs.round + ' ---');
     if (gs.nxtturn.length === 0) { endBattle(false); return; }
   }
 
@@ -2122,7 +2134,6 @@ function nextTurn() {
 
   highlightActive(cur.id);
   logLine(`[ ${cur.name}'s Turn ]`, 'turn');
-  termLog(cur.ishro ? 'cin >> chc;' : cur.name + ' selects random target');
 
   if (cur.ishro) {
     showHeroActions(cur);
@@ -2133,7 +2144,7 @@ function nextTurn() {
       if (alvhros.length > 0) {
         const tgt = alvhros[Math.floor(Math.random() * alvhros.length)];
         logLine(`${cur.name} attacks ${tgt.name}!`, 'enm');
-        termLog(cur.name + '.act(&' + tgt.name.toLowerCase().replace(/ /g,'_') + ');');
+        termLog(cur.name + ' attacks ' + tgt.name + ' for 15 damage!');
         applyDamage(cur, tgt, 15);
       }
       gs.turnIdx++;
@@ -2157,18 +2168,18 @@ function showHeroActions(hero) {
     mkBtn(btns, '🛡 Guard',   'grd',   () => doGuard(hero));
   } else if (hero.cls === 'mag') {
     mkBtn(btns, '🔥 Fireball (30mp)',   'spell', () => {
-      if (hero.mp < 30) { logLine('insuffmana — Not enough mana!', 'dmg'); termLog('throw insuffmana() — Fireball: Not enough mana!'); doGuard(hero); return; }
+      if (hero.mp < 30) { logLine('Not enough mana for Fireball!', 'sys'); termLog(hero.name + ' has no mana for Fireball!'); doGuard(hero); return; }
       pickEnemy(hero, 'fireball', 40, 30);
     }, hero.mp < 30);
     mkBtn(btns, '❄ Ice Strike (20mp)', 'spell', () => {
-      if (hero.mp < 20) { logLine('insuffmana — Not enough mana!', 'dmg'); termLog('throw insuffmana() — IceStrike: Not enough mana!'); doGuard(hero); return; }
+      if (hero.mp < 20) { logLine('Not enough mana for Ice Strike!', 'sys'); termLog(hero.name + ' has no mana for Ice Strike!'); doGuard(hero); return; }
       pickEnemy(hero, 'icestrike', 25, 20);
     }, hero.mp < 20);
     mkBtn(btns, '⚔ Attack', 'atk', () => pickEnemy(hero, 'attack', 25, 0));
     mkBtn(btns, '🛡 Guard',  'grd', () => doGuard(hero));
   } else if (hero.cls === 'hlr') {
     mkBtn(btns, '✨ Divine Light (25mp)', 'heal', () => {
-      if (hero.mp < 25) { logLine('insuffmana — Not enough mana!', 'dmg'); termLog('throw insuffmana() — DivineLight: Not enough mana!'); doGuard(hero); return; }
+      if (hero.mp < 25) { logLine('Not enough mana to heal!', 'sys'); termLog(hero.name + ' has no mana to heal!'); doGuard(hero); return; }
       pickAlly(hero);
     }, hero.mp < 25);
     mkBtn(btns, '⚔ Attack', 'atk', () => pickEnemy(hero, 'attack', 20, 0));
@@ -2237,18 +2248,18 @@ function clearTargetable() {
 function execAttack(hero, target, action, dmg, mpCost) {
   if (action === 'attack') {
     logLine(`${hero.name} swings a broadsword at ${target.name}!`, 'spl');
-    termLog(hero.name + '.act(' + target.name + ') → tkdmg(' + dmg + ')');
+    termLog(hero.name + ' attacks ' + target.name + ' for ' + dmg + ' damage!');
     applyDamage(hero, target, dmg);
   } else if (action === 'fireball') {
     hero.mp -= mpCost;
     logLine(`${hero.name} casts Fireball on ${target.name}!`, 'spl');
-    termLog(hero.name + '.cstspl("Fireball",' + target.name + ') → tkdmg(' + dmg + ')');
+    termLog(hero.name + ' casts Fireball on ' + target.name + ' for ' + dmg + ' damage!');
     applyDamage(hero, target, dmg);
     renderChar(hero);
   } else if (action === 'icestrike') {
     hero.mp -= mpCost;
-    logLine(`${hero.name} casts IceStrike on ${target.name}!`, 'spl');
-    termLog(hero.name + '.cstspl("IceStrike",' + target.name + ') → tkdmg(' + dmg + ')');
+    logLine(`${hero.name} casts Ice Strike on ${target.name}!`, 'spl');
+    termLog(hero.name + ' casts Ice Strike on ' + target.name + ' for ' + dmg + ' damage!');
     applyDamage(hero, target, dmg);
     renderChar(hero);
   }
@@ -2257,7 +2268,7 @@ function execAttack(hero, target, action, dmg, mpCost) {
 
 function doGuard(hero) {
   logLine(`${hero.name} guards.`, 'sys');
-  termLog(hero.name + '.act() → guard — turn skipped');
+  termLog(hero.name + ' guards their position.');
   advanceTurn();
 }
 
@@ -2274,7 +2285,7 @@ function advanceTurn() {
 function applyDamage(attacker, target, dmg) {
   target.hp = Math.max(0, target.hp - dmg);
   logLine(`${target.name} takes ${dmg} damage! (HP: ${target.hp}/${target.maxHp})`, 'dmg');
-  termLog(target.name + '.tkdmg(' + dmg + ') → HP:' + target.hp + '/' + target.maxHp);
+  termLog(target.name + ' HP: ' + target.hp + '/' + target.maxHp);
   shakeCard(target.id);
   floatDmg(target.id, `-${dmg}`, false);
   renderChar(target);
@@ -2285,7 +2296,8 @@ function applyHeal(caster, target, amt, mpCost) {
   caster.mp  = Math.max(0, caster.mp - mpCost);
   logLine(`${caster.name} casts Divine Light on ${target.name}!`, 'hlg');
   logLine(`${target.name} is healed for ${amt}! (HP: ${target.hp}/${target.maxHp})`, 'hlg');
-  termLog(caster.name + '.hl(' + amt + ') → ' + target.name + ' HP:' + target.hp + '/' + target.maxHp);
+  termLog(caster.name + ' heals ' + target.name + ' for ' + amt + ' HP!');
+  termLog(target.name + ' HP: ' + target.hp + '/' + target.maxHp);
   floatDmg(target.id, `+${amt}`, true);
   renderChar(target);
   renderChar(caster);
@@ -2369,24 +2381,20 @@ function endBattle(victory) {
     logLine('VICTORY! The heroes have triumphed.', 'vic');
     logLine('Loot: Staff of the Archmagus', 'loot');
     logLine('Loot: 1500 Gold', 'loot');
-    termLog('=== BATTLE CONCLUDED ===');
-    termLog('vic=true → lootbx<string>.open() = "Staff of the Archmagus"');
-    termLog('lootbx<int>.open() = 1500 Gold');
+    termLog('=== VICTORY! ===');
+    termLog('Loot: Staff of the Archmagus');
+    termLog('Loot: 1500 Gold');
     loot.innerHTML = `
       <p style="font-family:var(--font-header);font-size:8px;color:var(--accent);margin-bottom:10px">LOOT ACQUIRED</p>
       <p>🗡&nbsp; Staff of the Archmagus</p>
-      <p>💰&nbsp; 1500 Gold</p>
-      <p style="color:var(--txt-dim);font-size:13px;margin-top:8px">
-        lootbx&lt;string&gt; + lootbx&lt;int&gt;
-      </p>`;
+      <p>💰&nbsp; 1500 Gold</p>`;
   } else {
     title.className   = 'd';
     title.textContent = '💀  DEFEAT  💀';
     loot.innerHTML    = `<p style="color:var(--txt-dim)">The party has fallen...</p>`;
     logLine('=== BATTLE CONCLUDED ===', 'sep');
     logLine('DEFEAT! The party has fallen.', 'def');
-    termLog('=== BATTLE CONCLUDED ===');
-    termLog('vic=false → DEFEAT — party fallen');
+    termLog('=== DEFEAT ===');
   }
 }
 
