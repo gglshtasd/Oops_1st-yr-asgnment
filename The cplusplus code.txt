@@ -1,0 +1,168 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class chrctr {
+protected:
+    string nm;
+    int hp;
+    int mxhp;
+    int mn;
+
+public:
+    chrctr() {}
+    
+    virtual void act(chrctr& tgt, int choice) {
+    }
+    
+    string getnm() { return nm; }
+    int gethp() { return hp; }
+    int getmn() { return mn; }
+    
+    bool isalv() { 
+        if (hp > 0) return true;
+        else return false;
+    }
+    
+    void tkdmg(int d) { 
+        hp = hp - d; 
+        if (hp < 0) {
+            hp = 0; 
+        }
+        cout << "   -> " << nm << " takes " << d << " damage! (HP left: " << hp << ")\n";
+    }
+};
+
+class war : public chrctr {
+public:
+    war(string name_input) {
+        nm = name_input;
+        hp = 150;
+        mxhp = 150;
+        mn = 0; 
+    }
+    
+    void act(chrctr& tgt, int choice) override { 
+        if (choice == 1) {
+            cout << "\n> " << nm << " uses a Sword Attack!\n";
+            tgt.tkdmg(25); 
+        } 
+        else if (choice == 2) {
+            cout << "\n> " << nm << " uses a Heavy Smash!\n";
+            tgt.tkdmg(40); 
+        } 
+        else {
+            cout << "\n> " << nm << " got confused and missed!\n";
+        }
+    }
+};
+
+class mag : public chrctr {
+public:
+    mag(string name_input) {
+        nm = name_input;
+        hp = 80;
+        mxhp = 80;
+        mn = 40; 
+    }
+    
+    void act(chrctr& tgt, int choice) override { 
+        if (choice == 1) {
+            cout << "\n> " << nm << " uses a Staff Bonk!\n";
+            tgt.tkdmg(10); 
+        } 
+        else if (choice == 2) {
+            if (mn < 20) { 
+                cout << "\n> " << nm << " fails: Not enough mana!\n";
+                return; 
+            }
+            mn = mn - 20; 
+            cout << "\n> " << nm << " casts a Fireball!\n";
+            tgt.tkdmg(40); 
+        }
+        else {
+            cout << "\n> " << nm << " got confused and missed!\n";
+        }
+    }
+};
+
+class enmy : public chrctr {
+public:
+    enmy(string name_input, int health_input) {
+        nm = name_input;
+        hp = health_input;
+        mxhp = health_input;
+        mn = 0;
+    }
+    
+    void act(chrctr& tgt, int choice) override { 
+        cout << "\n> " << nm << " bites " << tgt.getnm() << " fiercely!\n";
+        tgt.tkdmg(15); 
+    }
+};
+
+int main() {
+    war p1("Arthur");
+    mag p2("Merlin");
+    enmy e1("Goblin Boss", 100);
+
+    cout << "================================\n";
+    cout << "      SIM RPG - TERMINAL\n";
+    cout << "================================\n";
+
+    int round = 1;
+    bool battleActive = true;
+
+    while (battleActive) {
+        cout << "\n--- ROUND " << round << " ---\n";
+
+        if (p1.isalv() && e1.isalv()) {
+            cout << "\n[" << p1.getnm() << "'s Turn | HP: " << p1.gethp() << "]\n";
+            cout << "1. Sword Attack (25 Dmg)\n";
+            cout << "2. Heavy Smash (40 Dmg)\n";
+            cout << "Enter your choice (1 or 2): ";
+            
+            int choice;
+            cin >> choice;
+            p1.act(e1, choice); 
+        }
+
+        if (p2.isalv() && e1.isalv()) {
+            cout << "\n[" << p2.getnm() << "'s Turn | HP: " << p2.gethp() << " | Mana: " << p2.getmn() << "]\n";
+            cout << "1. Staff Bonk (10 Dmg, 0 Mana)\n";
+            cout << "2. Fireball (40 Dmg, Costs 20 Mana)\n";
+            cout << "Enter your choice (1 or 2): ";
+            
+            int choice;
+            cin >> choice;
+            p2.act(e1, choice);
+        }
+
+        if (e1.isalv()) {
+            cout << "\n[Enemy Phase]\n";
+            if (p1.isalv()) {
+                e1.act(p1, 0); 
+            } else if (p2.isalv()) {
+                e1.act(p2, 0); 
+            }
+        }
+
+        if (!p1.isalv() && !p2.isalv()) {
+            battleActive = false; 
+        } 
+        else if (!e1.isalv()) {
+            battleActive = false; 
+        }
+        
+        round++;
+    }
+
+    if (p1.isalv() || p2.isalv()) {
+        cout << "\n=== VICTORY! The boss is defeated! ===\n";
+    } else {
+        cout << "\n=== DEFEAT! The heroes died. ===\n";
+    }
+
+    return 0;
+}
