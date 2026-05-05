@@ -1321,14 +1321,12 @@
 #include &lt;string&gt;
 using namespace std;
 
-// ── Abstract Base Class ──────────────────────────────────────
 class Character {
 protected:
     string name;
     int hp, maxHp, mana, speed;
     bool isHero;
 public:
-    // Constructor body — assign each member directly
     Character(string n, int h, int m, int s, bool hero) {
         name   = n;
         hp     = h;
@@ -1338,7 +1336,7 @@ public:
         isHero = hero;
     }
     virtual ~Character() {}
-    virtual void act(Character* target) = 0;   // pure virtual
+    virtual void act(Character* target) = 0;
 
     string getName()   { return name;   }
     int    getHp()     { return hp;     }
@@ -1352,7 +1350,6 @@ public:
     void useMana(int amt)    { mana -= amt; if (mana &lt; 0) mana = 0; }
 };
 
-// ── Hero Subclasses ──────────────────────────────────────────
 class Warrior : public Character {
 public:
     Warrior(string n) : Character(n, 150, 20, 10, true) {}
@@ -1395,7 +1392,6 @@ public:
     void act(Character* target) override { healAlly(target); }
 };
 
-// ── Enemy Class with Copy Constructor ───────────────────────
 class Enemy : public Character {
 public:
     Enemy(string n, int h, int s) : Character(n, h, 0, s, false) {}
@@ -1408,16 +1404,14 @@ public:
     }
 };
 
-// ── Main Battle Loop ─────────────────────────────────────────
 int main() {
     Warrior arthur("Arthur");
     Mage    merlin("Merlin");
     Healer  elara("Elara");
     Enemy   goblin("Goblin Scout", 60, 12);
     Enemy   orc("Orc Brute", 120, 8);
-    Enemy   goblinClone = goblin;   // calls copy constructor
+    Enemy   goblinClone = goblin;
 
-    // Arrays of base-class pointers — holds all 4 types
     Character* heroes[3]  = { &amp;arthur, &amp;merlin, &amp;elara };
     Character* enemies[3] = { &amp;goblin, &amp;orc, &amp;goblinClone };
 
@@ -1428,33 +1422,30 @@ int main() {
     while (battleActive) {
         cout &lt;&lt; "--- ROUND " &lt;&lt; round &lt;&lt; " ---" &lt;&lt; endl;
 
-        // Hero turns (arthur → merlin → elara)
         for (int i = 0; i &lt; 3; i++) {
             if (!heroes[i]-&gt;isAlive()) continue;
             if (i == 2) {
-                elara.healAlly(heroes[0]);          // Healer restores first hero
+                elara.healAlly(heroes[0]);
             } else {
                 for (int j = 0; j &lt; 3; j++) {
                     if (enemies[j]-&gt;isAlive()) {
-                        heroes[i]-&gt;act(enemies[j]); // polymorphic call
+                        heroes[i]-&gt;act(enemies[j]);
                         break;
                     }
                 }
             }
         }
 
-        // Enemy turns (goblin → orc → goblinClone)
         for (int i = 0; i &lt; 3; i++) {
             if (!enemies[i]-&gt;isAlive()) continue;
             for (int j = 0; j &lt; 3; j++) {
                 if (heroes[j]-&gt;isAlive()) {
-                    enemies[i]-&gt;act(heroes[j]);     // polymorphic call
+                    enemies[i]-&gt;act(heroes[j]);
                     break;
                 }
             }
         }
 
-        // Check if battle ends
         bool heroAlive = false, enemyAlive = false;
         for (int i = 0; i &lt; 3; i++) {
             if (heroes[i]-&gt;isAlive())  heroAlive  = true;
@@ -1481,24 +1472,22 @@ int main() {
 
         <!-- Tab: Classes & Inheritance -->
         <div id="tab-classes" class="cv-pane">
-<pre><code class="language-cpp">// Abstract base class — cannot be instantiated directly
-class Character {
+<pre><code class="language-cpp">class Character {
 protected:
     string name;
     int hp, maxHp, mana, speed;
     bool isHero;
 public:
-    // Constructor body — easier to read than initializer lists
     Character(string n, int h, int m, int s, bool hero) {
         name   = n;
         hp     = h;
-        maxHp  = h;   // remember starting HP as the max
+        maxHp  = h;
         mana   = m;
         speed  = s;
         isHero = hero;
     }
     virtual ~Character() {}
-    virtual void act(Character* target) = 0;  // pure virtual — must override
+    virtual void act(Character* target) = 0;
 
     bool   isAlive()   { return hp &gt; 0; }
     string getName()   { return name;   }
@@ -1512,10 +1501,8 @@ public:
     void useMana(int amt)    { mana -= amt; if (mana &lt; 0) mana = 0; }
 };
 
-// ── All hero classes inherit from Character ──────────────────
 class Warrior : public Character {
 public:
-    // Constructor chains up to Character with Warrior's stats
     Warrior(string n) : Character(n, 150, 20, 10, true) {}
     void act(Character* target) override {
         cout &lt;&lt; name &lt;&lt; " attacks " &lt;&lt; target-&gt;getName()
@@ -1559,7 +1546,6 @@ public:
 class Enemy : public Character {
 public:
     Enemy(string n, int h, int s) : Character(n, h, 0, s, false) {}
-    // Copy constructor — creates a renamed Clone of another Enemy
     Enemy(const Enemy&amp; e)
         : Character(e.name + " (Clone)", e.hp, e.mana, e.speed, false) {}
     void act(Character* target) override {
@@ -1568,61 +1554,40 @@ public:
         target-&gt;takeDamage(15);
     }
 };
-
-// ── How inheritance is used in main() ────────────────────────
-// Each subclass is created individually:
-//   Warrior arthur("Arthur");     → hp=150, mp=20, spd=10
-//   Mage    merlin("Merlin");     → hp=80,  mp=100, spd=15
-//   Healer  elara("Elara");       → hp=90,  mp=120, spd=14
-//   Enemy   goblin("Goblin Scout", 60, 12);
-//   Enemy   goblinClone = goblin; → copy constructor fires, name becomes "Goblin Scout (Clone)"</code></pre>
+</code></pre>
         </div>
 
         <!-- Tab: Polymorphism -->
         <div id="tab-poly" class="cv-pane">
-<pre><code class="language-cpp">// ── 1. RUNTIME POLYMORPHISM ──────────────────────────────────
-// Character declares act() as pure virtual — every subclass MUST override it.
-class Character {
+<pre><code class="language-cpp">class Character {
 public:
-    virtual void act(Character* target) = 0;  // pure virtual
+    virtual void act(Character* target) = 0;
     virtual ~Character() {}
 };
 
-// Each subclass provides its own version of act():
-void Warrior::act(Character* target)  { target-&gt;takeDamage(25); }         // sword strike
-void Mage::act(Character* target)     { castFireball(target);    }         // fire spell
-void Healer::act(Character* target)   { healAlly(target);        }         // divine light
-void Enemy::act(Character* target)    { target-&gt;takeDamage(15); }         // monster attack
+void Warrior::act(Character* target)  { target-&gt;takeDamage(25); }
+void Mage::act(Character* target)     { castFireball(target);    }
+void Healer::act(Character* target)   { healAlly(target);        }
+void Enemy::act(Character* target)    { target-&gt;takeDamage(15); }
 
-// The battle loop calls act() the same way for ALL characters.
-// C++ figures out which version to use at runtime — this is polymorphism:
 for (int i = 0; i &lt; 3; i++) {
     if (heroes[i]-&gt;isAlive())
-        heroes[i]-&gt;act(enemies[j]);   // warrior, mage, or healer? decided at runtime
+        heroes[i]-&gt;act(enemies[j]);
 }
 for (int i = 0; i &lt; 3; i++) {
     if (enemies[i]-&gt;isAlive())
-        enemies[i]-&gt;act(heroes[j]);   // same call → enemy version runs
+        enemies[i]-&gt;act(heroes[j]);
 }
 
-// ── 2. COPY CONSTRUCTOR (Enemy clone) ────────────────────────
-// Enemy defines a copy constructor that builds a renamed Clone:
 Enemy(const Enemy&amp; e)
     : Character(e.name + " (Clone)", e.hp, e.mana, e.speed, false) {}
 
 Enemy goblin("Goblin Scout", 60, 12);
-Enemy goblinClone = goblin;  // triggers copy constructor → "Goblin Scout (Clone)"
+Enemy goblinClone = goblin;
 
-// ── 3. BASE-CLASS POINTER ARRAY ──────────────────────────────
-// A raw array of Character* can hold ANY of the four subclass types.
-// Callers only need to know about act() — they never care HOW it works.
-Character* heroes[3]  = { &amp;arthur, &amp;merlin, &amp;elara };   // Warrior, Mage, Healer
-Character* enemies[3] = { &amp;goblin, &amp;orc, &amp;goblinClone }; // three Enemy objects
-
-// heroes[0]->act() calls Warrior::act   — sword strike for 25
-// heroes[1]->act() calls Mage::act      — Fireball for 40
-// enemies[0]->act() calls Enemy::act    — attack for 15
-// All dispatched automatically — no if/switch needed!</code></pre>
+Character* heroes[3]  = { &amp;arthur, &amp;merlin, &amp;elara };
+Character* enemies[3] = { &amp;goblin, &amp;orc, &amp;goblinClone };
+</code></pre>
         </div>
 
       </div><!-- /cv-body -->
