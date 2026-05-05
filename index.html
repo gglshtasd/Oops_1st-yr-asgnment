@@ -1283,7 +1283,10 @@
     <div class="term-panel" aria-label="C++ terminal output">
       <div class="gp-header">
         <h3>&#9654; C++ TERMINAL</h3>
-        <span class="term-badge">stdout</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="ab" id="run-sim-btn" onclick="runCppSimulation()" style="font-size:8px;padding:4px 10px;border-top-color:var(--heal);color:var(--heal)">▶ RUN C++ SIM</button>
+          <span class="term-badge">stdout</span>
+        </div>
       </div>
       <div class="term-body">
         <div class="term-top-bar">
@@ -1303,6 +1306,7 @@
           <div class="cv-dot dot-g"></div>
         </div>
         <span class="cv-fname">one_bullet_rpg — C++ Source</span>
+        <button class="term-badge" id="copy-btn" onclick="copyCode()" style="cursor:pointer;background:transparent;border-top:2px solid var(--accent);color:var(--accent);padding:3px 10px">📋 COPY</button>
       </div>
       <div class="cv-tabs" role="tablist">
         <button class="cv-tab active" role="tab" aria-selected="true"  onclick="switchTab('main', this)">main.cpp</button>
@@ -1315,32 +1319,40 @@
         <div id="tab-main" class="cv-pane active">
 <pre><code class="language-cpp">#include &lt;iostream&gt;
 #include &lt;string&gt;
-#include &lt;vector&gt;
 using namespace std;
 
+// ── Abstract Base Class ──────────────────────────────────────
 class Character {
 protected:
     string name;
     int hp, maxHp, mana, speed;
     bool isHero;
 public:
-    Character(string n, int h, int m, int s, bool hero)
-        : name(n), hp(h), maxHp(h), mana(m), speed(s), isHero(hero) {}
+    // Constructor body — assign each member directly
+    Character(string n, int h, int m, int s, bool hero) {
+        name   = n;
+        hp     = h;
+        maxHp  = h;
+        mana   = m;
+        speed  = s;
+        isHero = hero;
+    }
     virtual ~Character() {}
-    virtual void act(Character* target) = 0;
+    virtual void act(Character* target) = 0;   // pure virtual
 
-    string getName()   const { return name; }
-    int    getHp()     const { return hp; }
-    int    getMana()   const { return mana; }
-    int    getSpeed()  const { return speed; }
-    bool   getIsHero() const { return isHero; }
-    bool   isAlive()   const { return hp &gt; 0; }
+    string getName()   { return name;   }
+    int    getHp()     { return hp;     }
+    int    getMana()   { return mana;   }
+    int    getSpeed()  { return speed;  }
+    bool   getIsHero() { return isHero; }
+    bool   isAlive()   { return hp &gt; 0; }
 
     void takeDamage(int dmg) { hp -= dmg; if (hp &lt; 0) hp = 0; }
     void heal(int amt)       { hp += amt; if (hp &gt; maxHp) hp = maxHp; }
     void useMana(int amt)    { mana -= amt; if (mana &lt; 0) mana = 0; }
 };
 
+// ── Hero Subclasses ──────────────────────────────────────────
 class Warrior : public Character {
 public:
     Warrior(string n) : Character(n, 150, 20, 10, true) {}
@@ -1383,6 +1395,7 @@ public:
     void act(Character* target) override { healAlly(target); }
 };
 
+// ── Enemy Class with Copy Constructor ───────────────────────
 class Enemy : public Character {
 public:
     Enemy(string n, int h, int s) : Character(n, h, 0, s, false) {}
@@ -1395,57 +1408,66 @@ public:
     }
 };
 
+// ── Main Battle Loop ─────────────────────────────────────────
 int main() {
     Warrior arthur("Arthur");
     Mage    merlin("Merlin");
     Healer  elara("Elara");
     Enemy   goblin("Goblin Scout", 60, 12);
     Enemy   orc("Orc Brute", 120, 8);
-    Enemy   goblinClone = goblin;
+    Enemy   goblinClone = goblin;   // calls copy constructor
 
-    vector&lt;Character*&gt; heroes  = { &amp;arthur, &amp;merlin, &amp;elara };
-    vector&lt;Character*&gt; enemies = { &amp;goblin, &amp;orc, &amp;goblinClone };
+    // Arrays of base-class pointers — holds all 4 types
+    Character* heroes[3]  = { &amp;arthur, &amp;merlin, &amp;elara };
+    Character* enemies[3] = { &amp;goblin, &amp;orc, &amp;goblinClone };
 
     cout &lt;&lt; "=== RPG BATTLE INITIATED ===" &lt;&lt; endl;
-    int round = 1, seed = 0;
+    int  round = 1;
     bool battleActive = true;
 
     while (battleActive) {
-        vector&lt;Character*&gt; turnOrder;
-        for (auto h : heroes)  if (h-&gt;isAlive()) turnOrder.push_back(h);
-        for (auto e : enemies) if (e-&gt;isAlive()) turnOrder.push_back(e);
-        if (turnOrder.empty()) break;
-
-        for (int i = 0; i &lt; (int)turnOrder.size()-1; i++)
-            for (int j = i+1; j &lt; (int)turnOrder.size(); j++)
-                if (turnOrder[i]-&gt;getSpeed() &lt; turnOrder[j]-&gt;getSpeed())
-                    swap(turnOrder[i], turnOrder[j]);
-
         cout &lt;&lt; "--- ROUND " &lt;&lt; round &lt;&lt; " ---" &lt;&lt; endl;
 
-        for (auto cur : turnOrder) {
-            if (!cur-&gt;isAlive()) continue;
-            bool heroAlive = false, enemyAlive = false;
-            for (auto h : heroes)  if (h-&gt;isAlive()) heroAlive  = true;
-            for (auto e : enemies) if (e-&gt;isAlive()) enemyAlive = true;
-            if (!heroAlive || !enemyAlive) { battleActive = false; break; }
-
-            if (cur-&gt;getIsHero()) {
-                vector&lt;Character*&gt; aliveEnemies;
-                for (auto e : enemies) if (e-&gt;isAlive()) aliveEnemies.push_back(e);
-                cur-&gt;act(aliveEnemies[0]);
+        // Hero turns (arthur → merlin → elara)
+        for (int i = 0; i &lt; 3; i++) {
+            if (!heroes[i]-&gt;isAlive()) continue;
+            if (i == 2) {
+                elara.healAlly(heroes[0]);          // Healer restores first hero
             } else {
-                vector&lt;Character*&gt; aliveHeroes;
-                for (auto h : heroes) if (h-&gt;isAlive()) aliveHeroes.push_back(h);
-                int tgt = (seed++) % (int)aliveHeroes.size();
-                cur-&gt;act(aliveHeroes[tgt]);
+                for (int j = 0; j &lt; 3; j++) {
+                    if (enemies[j]-&gt;isAlive()) {
+                        heroes[i]-&gt;act(enemies[j]); // polymorphic call
+                        break;
+                    }
+                }
             }
         }
+
+        // Enemy turns (goblin → orc → goblinClone)
+        for (int i = 0; i &lt; 3; i++) {
+            if (!enemies[i]-&gt;isAlive()) continue;
+            for (int j = 0; j &lt; 3; j++) {
+                if (heroes[j]-&gt;isAlive()) {
+                    enemies[i]-&gt;act(heroes[j]);     // polymorphic call
+                    break;
+                }
+            }
+        }
+
+        // Check if battle ends
+        bool heroAlive = false, enemyAlive = false;
+        for (int i = 0; i &lt; 3; i++) {
+            if (heroes[i]-&gt;isAlive())  heroAlive  = true;
+            if (enemies[i]-&gt;isAlive()) enemyAlive = true;
+        }
+        if (!heroAlive || !enemyAlive) battleActive = false;
         round++;
     }
 
     bool victory = false;
-    for (auto h : heroes) if (h-&gt;isAlive()) victory = true;
+    for (int i = 0; i &lt; 3; i++)
+        if (heroes[i]-&gt;isAlive()) victory = true;
+
     if (victory) {
         cout &lt;&lt; "=== VICTORY! ===" &lt;&lt; endl;
         cout &lt;&lt; "Loot: Staff of the Archmagus" &lt;&lt; endl;
@@ -1466,25 +1488,34 @@ protected:
     int hp, maxHp, mana, speed;
     bool isHero;
 public:
-    Character(string n, int h, int m, int s, bool hero)
-        : name(n), hp(h), maxHp(h), mana(m), speed(s), isHero(hero) {}
+    // Constructor body — easier to read than initializer lists
+    Character(string n, int h, int m, int s, bool hero) {
+        name   = n;
+        hp     = h;
+        maxHp  = h;   // remember starting HP as the max
+        mana   = m;
+        speed  = s;
+        isHero = hero;
+    }
     virtual ~Character() {}
-    virtual void act(Character* target) = 0;  // pure virtual
+    virtual void act(Character* target) = 0;  // pure virtual — must override
 
-    bool   isAlive()   const { return hp &gt; 0; }
-    string getName()   const { return name; }
-    int    getHp()     const { return hp; }
-    int    getMana()   const { return mana; }
-    int    getSpeed()  const { return speed; }
-    bool   getIsHero() const { return isHero; }
+    bool   isAlive()   { return hp &gt; 0; }
+    string getName()   { return name;   }
+    int    getHp()     { return hp;     }
+    int    getMana()   { return mana;   }
+    int    getSpeed()  { return speed;  }
+    bool   getIsHero() { return isHero; }
 
     void takeDamage(int dmg) { hp -= dmg; if (hp &lt; 0) hp = 0; }
     void heal(int amt)       { hp += amt; if (hp &gt; maxHp) hp = maxHp; }
     void useMana(int amt)    { mana -= amt; if (mana &lt; 0) mana = 0; }
 };
 
+// ── All hero classes inherit from Character ──────────────────
 class Warrior : public Character {
 public:
+    // Constructor chains up to Character with Warrior's stats
     Warrior(string n) : Character(n, 150, 20, 10, true) {}
     void act(Character* target) override {
         cout &lt;&lt; name &lt;&lt; " attacks " &lt;&lt; target-&gt;getName()
@@ -1528,7 +1559,7 @@ public:
 class Enemy : public Character {
 public:
     Enemy(string n, int h, int s) : Character(n, h, 0, s, false) {}
-    // Copy constructor — creates a named Clone
+    // Copy constructor — creates a renamed Clone of another Enemy
     Enemy(const Enemy&amp; e)
         : Character(e.name + " (Clone)", e.hp, e.mana, e.speed, false) {}
     void act(Character* target) override {
@@ -1536,44 +1567,62 @@ public:
              &lt;&lt; " for 15 damage!" &lt;&lt; endl;
         target-&gt;takeDamage(15);
     }
-};</code></pre>
+};
+
+// ── How inheritance is used in main() ────────────────────────
+// Each subclass is created individually:
+//   Warrior arthur("Arthur");     → hp=150, mp=20, spd=10
+//   Mage    merlin("Merlin");     → hp=80,  mp=100, spd=15
+//   Healer  elara("Elara");       → hp=90,  mp=120, spd=14
+//   Enemy   goblin("Goblin Scout", 60, 12);
+//   Enemy   goblinClone = goblin; → copy constructor fires, name becomes "Goblin Scout (Clone)"</code></pre>
         </div>
 
         <!-- Tab: Polymorphism -->
         <div id="tab-poly" class="cv-pane">
 <pre><code class="language-cpp">// ── 1. RUNTIME POLYMORPHISM ──────────────────────────────────
-// Character has a pure virtual function — every subclass MUST override it.
+// Character declares act() as pure virtual — every subclass MUST override it.
 class Character {
 public:
     virtual void act(Character* target) = 0;  // pure virtual
     virtual ~Character() {}
 };
 
-// Each class provides its own version of act():
-void Warrior::act(Character* target) override { target-&gt;takeDamage(25); }
-void Mage::act(Character* target)    override { castFireball(target);    }
-void Healer::act(Character* target)  override { healAlly(target);        }
-void Enemy::act(Character* target)   override { target-&gt;takeDamage(15); }
+// Each subclass provides its own version of act():
+void Warrior::act(Character* target)  { target-&gt;takeDamage(25); }         // sword strike
+void Mage::act(Character* target)     { castFireball(target);    }         // fire spell
+void Healer::act(Character* target)   { healAlly(target);        }         // divine light
+void Enemy::act(Character* target)    { target-&gt;takeDamage(15); }         // monster attack
 
-// One loop, four different behaviours — same call, different result:
-for (auto cur : turnOrder) {
-    cur-&gt;act(target);   // calls Warrior, Mage, Healer, or Enemy version
+// The battle loop calls act() the same way for ALL characters.
+// C++ figures out which version to use at runtime — this is polymorphism:
+for (int i = 0; i &lt; 3; i++) {
+    if (heroes[i]-&gt;isAlive())
+        heroes[i]-&gt;act(enemies[j]);   // warrior, mage, or healer? decided at runtime
+}
+for (int i = 0; i &lt; 3; i++) {
+    if (enemies[i]-&gt;isAlive())
+        enemies[i]-&gt;act(heroes[j]);   // same call → enemy version runs
 }
 
 // ── 2. COPY CONSTRUCTOR (Enemy clone) ────────────────────────
-// Enemy has a copy constructor that creates a renamed Clone:
+// Enemy defines a copy constructor that builds a renamed Clone:
 Enemy(const Enemy&amp; e)
     : Character(e.name + " (Clone)", e.hp, e.mana, e.speed, false) {}
 
 Enemy goblin("Goblin Scout", 60, 12);
-Enemy goblinClone = goblin;  // calls copy constructor → "Goblin Scout (Clone)"
+Enemy goblinClone = goblin;  // triggers copy constructor → "Goblin Scout (Clone)"
 
-// ── 3. ABSTRACTION ───────────────────────────────────────────
-// Character* can point to any derived type.
-// Callers only need to know about act() — they don't care HOW it works.
-Character* hero = new Warrior("Arthur");
-hero-&gt;act(enemy);   // dispatches to Warrior::act at runtime
-delete hero;</code></pre>
+// ── 3. BASE-CLASS POINTER ARRAY ──────────────────────────────
+// A raw array of Character* can hold ANY of the four subclass types.
+// Callers only need to know about act() — they never care HOW it works.
+Character* heroes[3]  = { &amp;arthur, &amp;merlin, &amp;elara };   // Warrior, Mage, Healer
+Character* enemies[3] = { &amp;goblin, &amp;orc, &amp;goblinClone }; // three Enemy objects
+
+// heroes[0]->act() calls Warrior::act   — sword strike for 25
+// heroes[1]->act() calls Mage::act      — Fireball for 40
+// enemies[0]->act() calls Enemy::act    — attack for 15
+// All dispatched automatically — no if/switch needed!</code></pre>
         </div>
 
       </div><!-- /cv-body -->
@@ -1599,7 +1648,7 @@ delete hero;</code></pre>
       <span class="oop-icon">🔒</span>
       <h3>ENCAPSULATION</h3>
       <p>
-        The <code>Character</code> class hides its data (<code>name</code>, <code>hp</code>, <code>maxHp</code>, <code>mana</code>, <code>speed</code>) behind <code>protected</code> visibility. External code can only read stats through controlled getters like <code>getHp()</code>, <code>getMana()</code>, and <code>getSpeed()</code>, while mutations like <code>takeDamage()</code>, <code>heal()</code>, and <code>useMana()</code> enforce safe limits — HP never goes negative, never exceeds <code>maxHp</code>, mana never drops below zero. This keeps the object's internal state consistent at all times.
+        The <code>Character</code> class hides its data (<code>name</code>, <code>hp</code>, <code>maxHp</code>, <code>mana</code>, <code>speed</code>) behind <code>protected</code> visibility. External code can only read stats through controlled getters like <code>getHp()</code>, <code>getMana()</code>, and <code>getSpeed()</code>, while mutations like <code>takeDamage()</code>, <code>heal()</code>, and <code>useMana()</code> enforce safe limits — HP never goes negative, never exceeds <code>maxHp</code>, mana never drops below zero. The constructor body assigns each member directly, making it clear exactly what each parameter controls. This keeps the object's internal state consistent at all times.
       </p>
     </div>
 
@@ -1608,7 +1657,7 @@ delete hero;</code></pre>
       <span class="oop-icon">🌳</span>
       <h3>INHERITANCE</h3>
       <p>
-        All character types derive from the single abstract base <code>Character</code>. Hero classes <code>Warrior</code>, <code>Mage</code>, and <code>Healer</code> inherit shared logic (<code>takeDamage</code>, <code>heal</code>, <code>useMana</code>) and set their own stats via constructor chaining. <code>Enemy</code> also inherits <code>Character</code> and adds a copy constructor that creates a named <em>Clone</em> — shown by <code>Enemy goblinClone = goblin</code> in <code>main()</code>. This eliminates code duplication across all four concrete types.
+        All character types derive from the single abstract base <code>Character</code>. Hero classes <code>Warrior</code>, <code>Mage</code>, and <code>Healer</code> inherit shared logic (<code>takeDamage</code>, <code>heal</code>, <code>useMana</code>) and set their own stats by chaining up to the <code>Character</code> constructor. <code>Enemy</code> also inherits <code>Character</code> and adds a copy constructor that builds a named <em>Clone</em> — triggered by <code>Enemy goblinClone = goblin</code> in <code>main()</code>. Each subclass only writes the code unique to itself; shared behaviour lives once in the base class. This eliminates code duplication across all four concrete types.
       </p>
     </div>
 
@@ -1617,7 +1666,7 @@ delete hero;</code></pre>
       <span class="oop-icon">⚡</span>
       <h3>POLYMORPHISM</h3>
       <p>
-        The pure-virtual <code>act(Character*)</code> in <code>Character</code> enables runtime dispatch: the same <code>cur-&gt;act(target)</code> call fires a warrior's sword strike, a mage's fireball, a healer's divine light, or an enemy's attack — depending on the object's true type. A <code>vector&lt;Character*&gt;</code> holds all four types at once, and the loop treats them identically. The compiler figures out which <code>act()</code> to call at runtime — this is polymorphism in action.
+        The pure-virtual <code>act(Character*)</code> in <code>Character</code> enables runtime dispatch: the same <code>heroes[i]-&gt;act(target)</code> call fires a warrior's sword strike, a mage's fireball, or an enemy's attack — depending on the object's true type. Two simple indexed loops iterate over <code>Character*</code> arrays and call <code>act()</code> identically for every character; the compiler dispatches to the right subclass method at runtime. No <code>if/switch</code> needed — this is polymorphism in action.
       </p>
     </div>
 
@@ -1626,7 +1675,7 @@ delete hero;</code></pre>
       <span class="oop-icon">🎯</span>
       <h3>ABSTRACTION</h3>
       <p>
-        <code>Character</code> is an <em>abstract class</em> — it cannot be created directly (<code>Character c(...)</code> would not compile). The pure virtual <code>act()</code> defines <em>what</em> every character must do without saying <em>how</em>. Each subclass fills in the details. The rest of the code (the battle loop) works entirely through <code>Character*</code> pointers and never needs to know the specifics of any subclass. The <code>Enemy</code> copy constructor (<code>Enemy goblinClone = goblin</code>) also shows how classes control how their objects are copied.
+        <code>Character</code> is an <em>abstract class</em> — it cannot be created directly (<code>Character c(...)</code> would not compile) because <code>act()</code> is pure virtual. The pure virtual <code>act()</code> defines <em>what</em> every character must be able to do, without saying <em>how</em>. Each subclass fills in the details. The battle loop works entirely through <code>Character*</code> pointer arrays and never needs to know the specifics of any subclass. The <code>Enemy</code> copy constructor (<code>Enemy goblinClone = goblin</code>) also demonstrates how classes control how their objects are duplicated.
       </p>
     </div>
 
@@ -1661,6 +1710,7 @@ classDiagram
         #int mana
         #int speed
         #bool isHero
+        +Character(n, h, m, s, hero)
         +act(Character* target)*
         +takeDamage(int dmg)
         +heal(int amt)
@@ -1703,38 +1753,37 @@ classDiagram
     <div class="diag-card">
       <div class="diag-hd">
         <h3>SEQUENCE DIAGRAM</h3>
-        <p>Hero turn — action to resolution</p>
+        <p>One round — hero turns then enemy turns</p>
       </div>
       <div class="diag-body">
         <div class="mermaid">
 sequenceDiagram
-    participant P as Player
-    participant H as Hero (Character*)
-    participant E as Enemy (Character*)
+    participant A as Arthur (Warrior)
+    participant M as Merlin (Mage)
+    participant E as Elara (Healer)
     participant G as Game Loop
+    participant En as Enemy (Character*)
 
-    G->>H: Your turn (getIsHero() == true)
-    P->>H: Choose action
-    alt Attack (Warrior)
-        H->>E: act(enemy*)
-        E-->>H: takeDamage(25)
-        Note over E: HP decreases
-    else Cast Fireball (Mage)
-        H->>H: castFireball(enemy*)
-        H->>H: useMana(30)
-        H->>E: takeDamage(40)
-        Note over E: Fire damage applied
-    else Heal (Healer)
-        H->>H: healAlly(ally*)
-        H->>H: useMana(25)
-        H-->>H: heal(40)
-        Note over H: Ally HP restored
-    end
-    G-->>G: Advance turn index
-    G->>E: Enemy turn (getIsHero() == false)
-    E->>H: act(random hero*)
-    H-->>E: takeDamage(15)
-    G-->>G: Check heroAlive AND enemyAlive
+    G->>A: heroes[0]->act(enemies[j])
+    A->>En: takeDamage(25)
+    Note over En: HP decreases by 25
+
+    G->>M: heroes[1]->act(enemies[j])
+    M->>M: castFireball(enemy)
+    M->>M: useMana(30)
+    M->>En: takeDamage(40)
+    Note over En: Fire damage applied
+
+    G->>E: elara.healAlly(heroes[0])
+    E->>E: useMana(25)
+    E->>A: heal(40)
+    Note over A: Arthur HP restored
+
+    G->>En: enemies[i]->act(heroes[j])
+    En->>A: takeDamage(15)
+    Note over A: Monster attack lands
+
+    G-->>G: check heroAlive AND enemyAlive
         </div>
       </div>
     </div>
@@ -1742,48 +1791,40 @@ sequenceDiagram
     <div class="diag-card">
       <div class="diag-hd">
         <h3>GAME LOOP FLOWCHART</h3>
-        <p>Main battleActive loop with turnOrder sorting</p>
+        <p>Main battleActive loop — heroes first, then enemies</p>
       </div>
       <div class="diag-body">
         <div class="mermaid">
 flowchart TD
-    A([START]) --> B[Init heroes: Warrior, Mage, Healer\nInit enemies: Enemy x3]
+    A([START]) --> B[Create: Warrior, Mage, Healer\nEnemy x2, goblinClone via copy ctor]
     B --> C{battleActive?}
     C -->|No| Z([END])
-    C -->|Yes| D[Build turnOrder\nsorted by speed]
-    D --> E{turnOrder empty?}
-    E -->|Yes| Z
-    E -->|No| F[Get current character]
-    F --> G{isAlive?}
-    G -->|No| F
-    G -->|Yes| H{getIsHero?}
-    H -->|Hero| I[Show action menu\nPlayer chooses]
-    I --> J{Action?}
-    J -->|Attack| K[act on first alive enemy\ntakeDamage 25]
-    J -->|Fireball| L{mana >= 30?}
-    L -->|Yes| M[castFireball\ntakeDamage 40, useMana 30]
-    L -->|No| N[No mana!\ncout message, skip]
-    J -->|Ice Strike| O{mana >= 20?}
-    O -->|Yes| P2[castIceStrike\ntakeDamage 25, useMana 20]
-    O -->|No| N
-    J -->|Heal| Q{mana >= 25?}
-    Q -->|Yes| R[healAlly\nheal 40, useMana 25]
-    Q -->|No| N
-    J -->|Guard| S2[Skip turn]
-    H -->|Enemy| T[Random alive hero target\nact — takeDamage 15]
-    K --> U{heroAlive AND enemyAlive?}
-    M --> U
-    P2 --> U
-    R --> U
-    T --> U
-    N --> U
-    S2 --> U
-    U -->|No| V{Heroes alive?}
-    V -->|Yes| W[VICTORY\ncout loot items]
-    V -->|No| X[DEFEAT]
-    W --> Z
-    X --> Z
-    U -->|Yes| F
+    C -->|Yes| D[cout ROUND round]
+    D --> E[Hero loop i=0..2]
+    E --> F{heroes i alive?}
+    F -->|No| E
+    F -->|Yes| G{i == 2?\nHealer turn}
+    G -->|Yes| H[elara.healAlly heroes 0\nuseMana 25, hero hp +40]
+    G -->|No| I[Find first alive enemy j]
+    I --> J[heroes i ->act enemies j\npolymorphic call]
+    H --> K[Next hero]
+    J --> K
+    K --> E
+    E -->|Done| L[Enemy loop i=0..2]
+    L --> M{enemies i alive?}
+    M -->|No| L
+    M -->|Yes| N[Find first alive hero j]
+    N --> O[enemies i ->act heroes j\ntakeDamage 15]
+    O --> P[Next enemy]
+    P --> L
+    L -->|Done| Q{heroAlive AND enemyAlive?}
+    Q -->|No| R{Heroes alive?}
+    R -->|Yes| S[cout VICTORY\ncout loot items]
+    R -->|No| T[cout DEFEAT]
+    S --> Z
+    T --> Z
+    Q -->|Yes| U[round++]
+    U --> C
         </div>
       </div>
     </div>
@@ -2082,8 +2123,8 @@ function resetGame() {
   HERO_DEFS.forEach(heroDef => {
     const card = document.getElementById(`char-${heroDef.id}`);
     if (!card) return;
-    card.querySelector('.hp-fill').style.width = '100%';
-    card.querySelector('.mp-fill').style.width = '100%';
+    card.querySelector('.bar-fill.hp').style.width = '100%';
+    card.querySelector('.bar-fill.mp').style.width = '100%';
     card.querySelector('.hp-num').textContent  = `${heroDef.maxHp}/${heroDef.maxHp}`;
     card.querySelector('.mp-num').textContent  = `${heroDef.maxMp}/${heroDef.maxMp}`;
     card.classList.remove('dead', 'active-turn');
@@ -2091,7 +2132,7 @@ function resetGame() {
   ENEMY_DEFS.forEach(enemyDef => {
     const card = document.getElementById(`char-${enemyDef.id}`);
     if (!card) return;
-    card.querySelector('.hp-fill').style.width = '100%';
+    card.querySelector('.bar-fill.hp').style.width = '100%';
     card.querySelector('.hp-num').textContent  = `${enemyDef.maxHp}/${enemyDef.maxHp}`;
     card.classList.remove('dead', 'active-turn');
   });
@@ -2317,8 +2358,8 @@ function renderChar(ch) {
   const hpPct = Math.max(0, (ch.hp / ch.maxHp) * 100);
   const mpPct = ch.maxMp > 0 ? Math.max(0, (ch.mp / ch.maxMp) * 100) : 0;
 
-  const hpBar = card.querySelector('.hp-fill');
-  const mpBar = card.querySelector('.mp-fill');
+  const hpBar = card.querySelector('.bar-fill.hp');
+  const mpBar = card.querySelector('.bar-fill.mp');
   const hpNum = card.querySelector('.hp-num');
   const mpNum = card.querySelector('.mp-num');
 
@@ -2429,6 +2470,104 @@ function termLog(text) {
 function clearTerminal() {
   const term = document.getElementById('cpp-terminal');
   if (term) term.innerHTML = '';
+}
+
+/* ============================================================
+   STATIC C++ SIMULATION — replays the exact terminal output
+   produced when the simplified C++ code is compiled and run
+============================================================ */
+const CPP_SIM_OUTPUT = [
+  { text: '=== RPG BATTLE INITIATED ===', cls: 'sep' },
+  { text: '--- ROUND 1 ---',              cls: 'rnd' },
+  { text: 'Arthur attacks Goblin Scout for 25 damage!',          cls: '' },
+  { text: 'Merlin casts Fireball on Goblin Scout for 40 damage!', cls: 'spl' },
+  { text: 'Elara heals Arthur for 40 HP!',                       cls: 'hlg' },
+  { text: 'Orc Brute attacks Arthur for 15 damage!',             cls: 'enm' },
+  { text: 'Goblin Scout (Clone) attacks Arthur for 15 damage!',  cls: 'enm' },
+  { text: '--- ROUND 2 ---',              cls: 'rnd' },
+  { text: 'Arthur attacks Orc Brute for 25 damage!',             cls: '' },
+  { text: 'Merlin casts Fireball on Orc Brute for 40 damage!',   cls: 'spl' },
+  { text: 'Elara heals Arthur for 40 HP!',                       cls: 'hlg' },
+  { text: 'Orc Brute attacks Arthur for 15 damage!',             cls: 'enm' },
+  { text: 'Goblin Scout (Clone) attacks Arthur for 15 damage!',  cls: 'enm' },
+  { text: '--- ROUND 3 ---',              cls: 'rnd' },
+  { text: 'Arthur attacks Orc Brute for 25 damage!',             cls: '' },
+  { text: 'Merlin casts Fireball on Orc Brute for 40 damage!',   cls: 'spl' },
+  { text: 'Elara heals Arthur for 40 HP!',                       cls: 'hlg' },
+  { text: 'Goblin Scout (Clone) attacks Arthur for 15 damage!',  cls: 'enm' },
+  { text: '--- ROUND 4 ---',              cls: 'rnd' },
+  { text: 'Arthur attacks Goblin Scout (Clone) for 25 damage!',  cls: '' },
+  { text: 'Merlin has no mana for Fireball!',                    cls: 'sys' },
+  { text: 'Elara heals Arthur for 40 HP!',                       cls: 'hlg' },
+  { text: 'Goblin Scout (Clone) attacks Arthur for 15 damage!',  cls: 'enm' },
+  { text: '--- ROUND 5 ---',              cls: 'rnd' },
+  { text: 'Arthur attacks Goblin Scout (Clone) for 25 damage!',  cls: '' },
+  { text: 'Merlin has no mana for Fireball!',                    cls: 'sys' },
+  { text: 'Elara has no mana to heal!',                          cls: 'sys' },
+  { text: 'Goblin Scout (Clone) attacks Arthur for 15 damage!',  cls: 'enm' },
+  { text: '--- ROUND 6 ---',              cls: 'rnd' },
+  { text: 'Arthur attacks Goblin Scout (Clone) for 25 damage!',  cls: '' },
+  { text: 'Elara has no mana to heal!',                          cls: 'sys' },
+  { text: '=== VICTORY! ===',             cls: 'vic' },
+  { text: 'Loot: Staff of the Archmagus', cls: 'loot' },
+  { text: 'Loot: 1500 Gold',              cls: 'loot' },
+];
+
+let simRunning = false;
+function runCppSimulation() {
+  if (simRunning) return;
+  simRunning = true;
+  const btn = document.getElementById('run-sim-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ RUNNING…'; }
+  clearTerminal();
+  const term = document.getElementById('cpp-terminal');
+  // Show compile prompt
+  const prompt = document.createElement('div');
+  prompt.className = 'tl';
+  prompt.style.color = 'var(--term-dim)';
+  prompt.textContent = '$ g++ -o main main.cpp && ./main';
+  term.appendChild(prompt);
+
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= CPP_SIM_OUTPUT.length) {
+      clearInterval(interval);
+      simRunning = false;
+      if (btn) { btn.disabled = false; btn.textContent = '↺ REPLAY SIM'; }
+      return;
+    }
+    const line = CPP_SIM_OUTPUT[i];
+    const div  = document.createElement('div');
+    div.className   = `tl ll ${line.cls}`;
+    div.textContent = line.text;
+    term.appendChild(div);
+    term.scrollTop  = term.scrollHeight;
+    i++;
+  }, 130);
+}
+
+/* ============================================================
+   COPY CODE
+============================================================ */
+function copyCode() {
+  const activePane = document.querySelector('.cv-pane.active');
+  if (!activePane) return;
+  const code = activePane.querySelector('code');
+  if (!code) return;
+  const btn = document.getElementById('copy-btn');
+  navigator.clipboard.writeText(code.textContent).then(() => {
+    if (btn) { btn.textContent = '✓ COPIED'; setTimeout(() => { btn.textContent = '📋 COPY'; }, 1800); }
+  }).catch(() => {
+    // Fallback for browsers without clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = code.textContent;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (btn) { btn.textContent = '✓ COPIED'; setTimeout(() => { btn.textContent = '📋 COPY'; }, 1800); }
+  });
 }
 </script>
 </body>
